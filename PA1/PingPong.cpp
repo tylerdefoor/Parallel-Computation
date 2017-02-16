@@ -69,7 +69,7 @@ int main ( )
         cout << "Master received at " << end << endl;
 
         total = end - start;
-        cout << total << endl;
+        cout << "Total: " << total << endl;
     }   
 
     //If we are in the slave task
@@ -81,4 +81,9 @@ int main ( )
         //Send the number
         MPI_Send ( &number, COUNT, TYPE, MASTER, TAG, MPI_COMM_WORLD );
     }
+
+    //Finalize MPI because I'm a good programmer
+    MPI_Finalize (  );
+
+    return 1;
 }
