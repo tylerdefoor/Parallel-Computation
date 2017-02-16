@@ -17,7 +17,7 @@
 //A bad habit I will break one day
 using namespace std; 
 
-int main ( )
+int main ( int argc, char* argv[] )
 {
     /* Variable Declarations */
     int taskid, worldSize;
@@ -27,10 +27,11 @@ int main ( )
     /* End of Variable Declarations */
 
     //Initialize MPI
-    MPI_Init ( NULL, NULL );
+    MPI_Init ( &argc, &argv );
 
     //Get the world size
     MPI_Comm_size ( MPI_COMM_WORLD, &worldSize );
+    cout << "World size: " << worldSize << endl;
 
     /**
       Check to see if the world size is 2
@@ -39,14 +40,17 @@ int main ( )
       */
        
     //If the world size isn't 2
+    /*
     if ( worldSize != 2 )
     {
         //Error message
         cout << "World size should be 2. Make sure to use -n 2" << endl;
+        cout << "Current world size is: " << worldSize << endl;
 
         //Abort
         MPI_Abort ( MPI_COMM_WORLD, 1 );
     }
+    */
 
     //Get Rank
     MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
@@ -73,7 +77,7 @@ int main ( )
     }   
 
     //If we are in the slave task
-    else
+    else if ( taskid == SLAVE )
     {
         //Receive the number
         MPI_Recv ( &number, COUNT, TYPE, MASTER, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
