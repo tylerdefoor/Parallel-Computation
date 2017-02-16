@@ -1,7 +1,15 @@
-# Example Parallel Programming Programs
-## This is for use at the University of Nevada, Reno CS 415/615 Parallel Computing Class
-Any students in that class follow the instructions at [**Github Setup**](https://github.com/cs415-615/template/wiki/Github-Setup) to begin. This is part of the first assignment in the class and necessary for turning in assignments throughout the semester.
-
-Read through the Wiki on this repository to understand how each class works. This Wiki focuses on the code in PA0.
+# Grading Repository for CS 415 - Parallel Computing
 
 # Projects
+## PA0 - Hello World!
+
+Hello World program that is prewritten. Given to us by Dr. Harris to show us how to compile.
+
+## PA1 - Ping Pong
+
+### PingPong.cpp
+Passes an int back and forth between two processes and times it. There will be a timing for both a single machine and on two machines
+
+### Timing.cpp
+Passes an int array between two processes on two machines. The int array increases in size until $MAXNUMBER increasing by steps of $STEP.
+This timing is then graphed and a report is written
