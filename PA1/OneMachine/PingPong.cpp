@@ -40,7 +40,6 @@ int main ( int argc, char* argv[] )
       */
        
     //If the world size isn't 2
-    /*
     if ( worldSize != 2 )
     {
         //Error message
@@ -50,7 +49,6 @@ int main ( int argc, char* argv[] )
         //Abort
         MPI_Abort ( MPI_COMM_WORLD, 1 );
     }
-    */
 
     //Get Rank
     MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
