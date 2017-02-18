@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <numeric>
 #define MASTER  0
 #define TAG     1
 #define COUNT   1
