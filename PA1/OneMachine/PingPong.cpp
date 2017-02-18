@@ -8,6 +8,7 @@
 #include "mpi.h"
 #include <iostream>
 #include <string>
+#include <vector>
 #define MASTER  0
 #define TAG     1
 #define COUNT   1
@@ -22,8 +23,8 @@ int main ( int argc, char* argv[] )
     /* Variable Declarations */
     int taskid, worldSize;
     int number = 10;
-    double start, end, total;
-
+    double start, end, total, average;
+    vector<double> times (1000);
     /* End of Variable Declarations */
 
     //Initialize MPI
@@ -35,7 +36,7 @@ int main ( int argc, char* argv[] )
 
     /**
       Check to see if the world size is 2
-      The program will function if the world size is greate
+      The program will function if the world size is greater
       This is just a check to make sure I'm doing things exactly as I want them
       */
        
@@ -53,36 +54,53 @@ int main ( int argc, char* argv[] )
     //Get Rank
     MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
 
-    //If we are in the master task
-    if ( taskid == MASTER )
+    //Ping pong back and forth 1000 times
+    for ( int i = 0; i < 1000; i++ )
     {
-        //Get the start time
-        start = MPI_Wtime (  );
-        cout << "Sent from master at " << start << endl;
+        //If we are in the master task
+        if ( taskid == MASTER )
+        {
+            //Get the start time
+            start = MPI_Wtime (  );
 
-        //Send the number
-        MPI_Send ( &number, COUNT, TYPE, SLAVE, TAG, MPI_COMM_WORLD );
+            //Send the number
+            MPI_Send ( &number, COUNT, TYPE, SLAVE, TAG, MPI_COMM_WORLD );
 
-        //Receive the number
-        MPI_Recv ( &number, COUNT, TYPE, SLAVE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            //Receive the number
+            MPI_Recv ( &number, COUNT, TYPE, SLAVE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
-        //End the timer 
-        end = MPI_Wtime (  );
-        cout << "Master received at " << end << endl;
+            //End the timer 
+            end = MPI_Wtime (  );
 
-        total = end - start;
-        cout << "Total: " << total << endl;
-    }   
+            //Get the total time
+            total = end - start;
 
-    //If we are in the slave task
-    else if ( taskid == SLAVE )
-    {
-        //Receive the number
-        MPI_Recv ( &number, COUNT, TYPE, MASTER, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            //Add this to the times
+            times.push_back ( total );
 
-        //Send the number
-        MPI_Send ( &number, COUNT, TYPE, MASTER, TAG, MPI_COMM_WORLD );
+            //Block until both are finished
+            MPI_Barrier ( MPI_COMM_WORLD );
+        }   
+
+        //If we are in the slave task
+        else if ( taskid == SLAVE )
+        {
+            //Receive the number
+            MPI_Recv ( &number, COUNT, TYPE, MASTER, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+
+            //Send the number
+            MPI_Send ( &number, COUNT, TYPE, MASTER, TAG, MPI_COMM_WORLD );
+
+            //Block until both are finished
+            MPI_Barrier ( MPI_COMM_WORLD );
+        }
     }
+
+    //Get the average
+    average = accumulate ( times.begin (  ), times.end (  ), 0.0 ) / times.size (  );
+
+    //Output the average
+    cout << "The average of 1000 trials is: " << average << endl;
 
     //Finalize MPI because I'm a good programmer
     MPI_Finalize (  );
