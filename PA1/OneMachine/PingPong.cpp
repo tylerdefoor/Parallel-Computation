@@ -87,5 +87,5 @@ int main ( int argc, char* argv[] )
     //Finalize MPI because I'm a good programmer
     MPI_Finalize (  );
 
-    return 1;
+    return 0;
 }
