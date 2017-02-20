@@ -5,6 +5,6 @@
 #SBATCH --time=00:05:00
 #SBATCH --mail-user=tylerleedefoor@gmail.com
 #SBATCH --mail-type=ALL
-#SBATCH --output=Two_box.txt
+#SBATCH --output=Two_box2.txt
 
 srun Two_box
