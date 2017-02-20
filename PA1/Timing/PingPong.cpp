@@ -12,7 +12,6 @@
 #include <numeric>
 #define MASTER  0
 #define TAG     1
-#define COUNT   1
 #define TYPE    MPI_INT
 #define SLAVE   1
 
@@ -25,7 +24,8 @@ int main ( int argc, char* argv[] )
     int taskid, worldSize;
     int number = 10;
     double start, end, total, average;
-    vector<double> times (1000);
+    vector<double> times ();
+    vector<int> numbers (5000, 0);
     /* End of Variable Declarations */
 
     //Initialize MPI
@@ -33,7 +33,7 @@ int main ( int argc, char* argv[] )
 
     //Get the world size
     MPI_Comm_size ( MPI_COMM_WORLD, &worldSize );
-    cout << "World size: " << worldSize << endl;
+    //cout << "World size: " << worldSize << endl;
 
     /**
       Check to see if the world size is 2
@@ -56,7 +56,7 @@ int main ( int argc, char* argv[] )
     MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
 
     //Ping pong back and forth 1000 times
-    for ( int i = 0; i < 1000; i++ )
+    for ( int i = 10; i <= 5000; i+= 10 )
     {
         //If we are in the master task
         if ( taskid == MASTER )
@@ -65,10 +65,10 @@ int main ( int argc, char* argv[] )
             start = MPI_Wtime (  );
 
             //Send the number
-            MPI_Send ( &number, COUNT, TYPE, SLAVE, TAG, MPI_COMM_WORLD );
+            MPI_Send ( &numbers, i, TYPE, SLAVE, TAG, MPI_COMM_WORLD );
 
             //Receive the number
-            MPI_Recv ( &number, COUNT, TYPE, SLAVE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            MPI_Recv ( &numbers, i, TYPE, SLAVE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
             //End the timer 
             end = MPI_Wtime (  );
@@ -83,28 +83,16 @@ int main ( int argc, char* argv[] )
             MPI_Barrier ( MPI_COMM_WORLD );
 
             cout << i << " " << total << endl;
-
-            if ( i == 999 )
-            {
-
-                //Get the average
-                double sum = accumulate ( times.begin (  ), times.end (  ), 0.0 );
-                average = sum / times.size (  );
-
-                //Output the average
-                cout << "The average of " << times.size (  ) << " trials is: " << average << endl;
-
-            }
         }   
 
         //If we are in the slave task
         else if ( taskid == SLAVE )
         {
             //Receive the number
-            MPI_Recv ( &number, COUNT, TYPE, MASTER, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            MPI_Recv ( &numbers, i, TYPE, MASTER, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
             //Send the number
-            MPI_Send ( &number, COUNT, TYPE, MASTER, TAG, MPI_COMM_WORLD );
+            MPI_Send ( &numbers, i, TYPE, MASTER, TAG, MPI_COMM_WORLD );
 
             //Block until both are finished
             MPI_Barrier ( MPI_COMM_WORLD );
