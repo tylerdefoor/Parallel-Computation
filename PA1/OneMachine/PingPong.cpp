@@ -75,12 +75,26 @@ int main ( int argc, char* argv[] )
 
             //Get the total time
             total = end - start;
-
+            
             //Add this to the times
             times.push_back ( total );
 
             //Block until both are finished
             MPI_Barrier ( MPI_COMM_WORLD );
+
+            cout << i << " " << total << endl;
+
+            if ( i == 999 )
+            {
+
+                //Get the average
+                double sum = accumulate ( times.begin (  ), times.end (  ), 0.0 );
+                average = sum / times.size (  );
+
+                //Output the average
+                cout << "The average of " << times.size (  ) << " trials is: " << average << endl;
+
+            }
         }   
 
         //If we are in the slave task
@@ -96,12 +110,6 @@ int main ( int argc, char* argv[] )
             MPI_Barrier ( MPI_COMM_WORLD );
         }
     }
-
-    //Get the average
-    average = accumulate ( times.begin (  ), times.end (  ), 0.0 ) / times.size (  );
-
-    //Output the average
-    cout << "The average of 1000 trials is: " << average << endl;
 
     //Finalize MPI because I'm a good programmer
     MPI_Finalize (  );

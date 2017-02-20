@@ -1,5 +1,5 @@
-OneMachine: PingPong.cpp
-	mpicxx -Wall -lpmi -o OneMachine PingPong.cpp
+One_box: PingPong.cpp
+	mpicxx -Wall -lpmi -o One_box PingPong.cpp
 
 clean:
-	\rm OneMachine *.o
+	\rm One_box *.o *.out

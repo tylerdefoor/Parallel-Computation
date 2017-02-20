@@ -5,5 +5,6 @@
 #SBATCH --time=00:05:00
 #SBATCH --mail-user=tylerleedefoor@gmail.com
 #SBATCH --mail-type=ALL
+#SBATCH --output=One_box.txt
 
-srun OneMachine
+srun One_box
