@@ -1,7 +1,0 @@
-1150 0.00110269
-srun: error: compute-0-9: task 1: Segmentation fault
-1160 0.000260115
-srun: error: compute-0-7: task 0: Exited with exit code 1
-Fatal error in MPI_Recv: A process has failed, error stack:
-MPI_Recv(184).............: MPI_Recv(buf=0x7fff7d1afb00, count=1170, MPI_INT, src=1, tag=1, MPI_COMM_WORLD, status=0x1) failed
-dequeue_and_set_error(865): Communication error with rank 1

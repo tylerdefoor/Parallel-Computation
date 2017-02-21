@@ -23,9 +23,14 @@ int main ( int argc, char* argv[] )
     /* Variable Declarations */
     int taskid, worldSize;
     double start, end, total;
-    vector<int> send ( 10000, 1 );
-    vector<int> receive ( 10000 );
+    //vector<int> send ( 10000, 1 );
+    int send[5000];
+    int rec[5000];
+    //vector<int> receive ( 10000 );
     /* End of Variable Declarations */
+
+    for ( int i = 0; i < 5000; i++ )
+        send[i] = 1;
 
     //Initialize MPI
     MPI_Init ( &argc, &argv );
@@ -54,7 +59,7 @@ int main ( int argc, char* argv[] )
     //Get Rank
     MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
 
-    for ( int i = 2000; i <= 3000; i+= 10 )
+    for ( int i = 10; i <= 5000; i+= 10 )
     {
         //If we are in the master task
         if ( taskid == MASTER )
@@ -63,20 +68,16 @@ int main ( int argc, char* argv[] )
             start = MPI_Wtime (  );
 
             //Send the number
-            MPI_Send ( &send, i, TYPE, SLAVE, TAG, MPI_COMM_WORLD );
+            MPI_Send ( send, i, TYPE, SLAVE, TAG, MPI_COMM_WORLD );
 
             //Receive the number
-            MPI_Recv ( &receive, i, TYPE, SLAVE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            MPI_Recv ( rec, i, TYPE, SLAVE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
             //End the timer 
             end = MPI_Wtime (  );
-            receive.clear (  );
 
             //Get the total time
             total = end - start;
-            
-            //Block until both are finished
-            MPI_Barrier ( MPI_COMM_WORLD );
 
             cout << i << " " << total << endl;
         }   
@@ -85,14 +86,10 @@ int main ( int argc, char* argv[] )
         else if ( taskid == SLAVE )
         {
             //Receive the number
-            MPI_Recv ( &receive, i, TYPE, MASTER, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-            receive.clear (  );
+            MPI_Recv ( rec, i, TYPE, MASTER, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
             //Send the number
-            MPI_Send ( &send, i, TYPE, MASTER, TAG, MPI_COMM_WORLD );
-
-            //Block until both are finished
-            MPI_Barrier ( MPI_COMM_WORLD );
+            MPI_Send ( send, i, TYPE, MASTER, TAG, MPI_COMM_WORLD );
         }
     }
 
