@@ -15,3 +15,7 @@
 1. Navigate to "Timing" folder
 2. Type "make" to compile program
 3. Type "sbatch Timing.sh" to run the batch script
+
+##Report Structure
+Main report is in "Tyler_DeFoor_PA1_Report.pdf"
+Report data is in "Timing_Data.xlsx"
