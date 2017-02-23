@@ -17,5 +17,5 @@
 3. Type "sbatch Timing.sh" to run the batch script
 
 ##Report Structure
-Main report is in "Tyler_DeFoor_PA1_Report.pdf"
-Report data is in "Timing_Data.xlsx"
+The main report for the project is "Tyler_DeFoor_PA1_Report.pdf". It contains the analysis and conclusions built from the data.
+The report data is in "Timing_Data.xlsx"
