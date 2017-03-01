@@ -5,6 +5,6 @@
 #SBATCH --time=02:00:00
 #SBATCH --mail-user=tylerleedefoor@gmail.com
 #SBATCH --mail-type=ALL
-#SBATCH --output=Timing10.txt
+#SBATCH --output=Timing.txt
 
 srun Timing

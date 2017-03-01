@@ -13,3 +13,6 @@ Passes an int back and forth between two processes and times it. There will be a
 ### Timing.cpp
 Passes an int array between two processes on two machines. The int array increases in size until $MAXNUMBER increasing by steps of $STEP.
 This timing is then graphed and a report is written
+
+##PA2 - Mandelbrot
+Graphs the Mandelbrot function sequentially and in parallel and compares the time. 
