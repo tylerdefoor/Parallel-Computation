@@ -5,8 +5,10 @@
 struct Complex
 {
     //Floats for real and imaginary portions
-    float real = 0.0;
-    float imaginary = 0.0;
+    float real ;
+    float imaginary;
 };
 
 unsigned char calculate ( Complex current );
+
+#endif
