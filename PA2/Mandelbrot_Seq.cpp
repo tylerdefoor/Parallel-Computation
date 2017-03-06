@@ -8,17 +8,29 @@
 #include "PIMFuncs.h"
 #include "Mandelbrot_Seq.h"
 #include <cmath>
+#include <iostream>
 
 #define WIDTH       1920
 #define HEIGHT      1080
 #define ITERATIONS  256
 
+using namespace std;
+
 int main ( int argc, char** argv )
 {
     /* Variable Declarations */
+    //Timing variables
     double start, end, total;
+
+    //File name
     const char* const fileName = "Mandelbrot_Seq.out";
-    unsigned char map[HEIGHT][WIDTH];
+
+    //Map for writing to file
+    unsigned char** map;
+    map = new unsigned char*[HEIGHT];
+    for ( int i = 0; i < HEIGHT; i++ )
+        map[i] = new unsigned char[WIDTH];
+
     /* End of Variable Declarations */
 
     //Iterate rows from 0 to HEIGHT - 1
