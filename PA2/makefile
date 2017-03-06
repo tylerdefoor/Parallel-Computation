@@ -1,4 +1,4 @@
-Mandelbrot_seq: Mandelbrot_seq.h Mandelbrot_seq.cpp
+Mandelbrot_seq:
 	g++ -o Mandelbrot_seq Mandelbrot_seq.cpp 
 
 clean:
