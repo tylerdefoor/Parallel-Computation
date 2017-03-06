@@ -6,7 +6,7 @@ struct Complex
 {
     //Floats for real and imaginary portions
     float real ;
-    float imaginary;
+    float imag;
 };
 
 unsigned char calculate ( Complex current );

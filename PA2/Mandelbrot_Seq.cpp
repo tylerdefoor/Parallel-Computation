@@ -10,9 +10,13 @@
 #include <cmath>
 #include <iostream>
 
-#define WIDTH       1920
-#define HEIGHT      1080
+#define WIDTH       100
+#define HEIGHT      100
 #define ITERATIONS  256
+#define REAL_MIN    -2.0
+#define REAL_MAX    2.0
+#define IMAG_MIN    -2.0
+#define IMAG_MAX    2.0
 
 using namespace std;
 
@@ -23,7 +27,7 @@ int main ( int argc, char** argv )
     double start, end, total;
 
     //File name
-    const char* const fileName = "Mandelbrot_Seq.out";
+    const char* const fileName = "Mandelbrot_Seq.pim";
 
     //Map for writing to file
     unsigned char** map;
@@ -41,8 +45,8 @@ int main ( int argc, char** argv )
         {
             //Create the current complex number with the coordinates
             Complex current;
-            current.real = column;
-            current.imaginary = row;
+            current.real = REAL_MIN + column * (REAL_MAX - REAL_MIN) / WIDTH;
+            current.imag = IMAG_MIN + row * (IMAG_MAX - IMAG_MIN) / HEIGHT;
 
             //Set the map coordinate to the value of the Mandelbrot calculation
             map[row][column] = calculate ( current );
@@ -61,7 +65,7 @@ unsigned char calculate ( Complex coordinate )
     //Intially set to 0 + 0i
     Complex current;
     current.real = 0.0;
-    current.imaginary = 0.0;
+    current.imag = 0.0;
 
     //A temporary float holder and the length of the complex number squared
     float temp, squarelength;
@@ -70,20 +74,23 @@ unsigned char calculate ( Complex coordinate )
     do
     {
         //The temp is currentreal ^ 2 - currentimag ^ 2 + coordinatereal
-        temp = pow ( current.real, 2.0 ) - pow ( current.imaginary, 2.0 ) + coordinate.real;
+        temp = current.real * current.real  - current.imag * current.imag + coordinate.real;
 
         //Set currentimag to 2 * currentreal * currentimag + coordinageimag
-        current.imaginary = 2 * current.real * current.imaginary + coordinate.imaginary;
+        current.imag = 2 * current.real * current.imag + coordinate.imag;
 
         //Set currantreal to the previously calculated temp
         current.real = temp;
 
         //Get the square length of the imaginary number
-        squarelength = pow ( current.real, 2.0 ) + ( current.imaginary, 2.0 );
+        squarelength = current.real * current.real + current.imag * current.imag;
 
         //Increase count
         count++;
+
     } while ( ( squarelength < 4.0) && ( count < ITERATIONS ) );
+
+    //count -= 1;
 
     //Return the number of iterations we went through
     return (unsigned char)count;
