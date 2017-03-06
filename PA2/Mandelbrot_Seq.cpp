@@ -10,8 +10,8 @@
 #include <cmath>
 #include <iostream>
 
-#define WIDTH       100
-#define HEIGHT      100
+#define WIDTH       1920
+#define HEIGHT      1080
 #define ITERATIONS  256
 #define REAL_MIN    -2.0
 #define REAL_MAX    2.0
