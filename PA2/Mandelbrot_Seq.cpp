@@ -6,13 +6,14 @@
   */
  
 #include "PIMFuncs.h"
+#include "Mandelbrot_Seq.h"
 #include <cmath>
 
 #define WIDTH       1920
 #define HEIGHT      1080
 #define ITERATIONS  256
 
-int main ( int argc, char* argv )
+int main ( int argc, char** argv )
 {
     /* Variable Declarations */
     double start, end, total;
@@ -21,10 +22,10 @@ int main ( int argc, char* argv )
     /* End of Variable Declarations */
 
     //Iterate rows from 0 to HEIGHT - 1
-    for ( int row = 0; i < HEIGHT; row++ )
+    for ( int row = 0; row < HEIGHT; row++ )
     {
         //Iterate columns from 0 to WIDTH - 1
-        for ( int column = 0; i < WIDTH; column++ )
+        for ( int column = 0; column < WIDTH; column++ )
         {
             //Create the current complex number with the coordinates
             Complex current;
