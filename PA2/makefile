@@ -1,5 +1,11 @@
-Mandelbrot_seq:
-	g++ -o Mandelbrot_seq Mandelbrot_seq.cpp 
+Mandelbrot_seq: PIMFuncs.o Mandelbrot_seq.o
+	g++ Mandelbrot_seq.o PIMFuncs.o -o Mandelbrot_seq
+
+Mandelbrot_seq.o: Mandelbrot_seq.cpp
+	g++ -c Mandelbrot_seq.cpp
+
+PIMFuncs.o: PIMFuncs.cpp
+	g++ -c PIMFuncs.cpp
 
 clean:
-	\rm Timing *.o *.out *.txt
+	\rm Mandelbrot_seq *.o *.out *.txt
