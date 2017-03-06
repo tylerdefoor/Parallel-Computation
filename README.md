@@ -4,7 +4,7 @@
 # Projects
 ## PA0 - Hello World!
 
-Hello World program that is prewritten. Given to us by Dr. Harris to show us how to compile.
+Hello World program that is prewritten. It is given to us by Dr. Harris to show us how to compile.
 
 ## PA1 - Ping Pong
 
