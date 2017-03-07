@@ -1,11 +1,11 @@
-#ifndef MANDELBROT_SEQ_H
-#define MANDELBROT_SEQ_H
+#ifndef MANDELBROT_H
+#define MANDELBROT_H
 
 //Complex numbers struct
 struct Complex
 {
     //Floats for real and imaginary portions
-    float real ;
+    float real;
     float imag;
 };
 

@@ -1,13 +1,12 @@
-/** @file Mandelbrot_Seq.cpp
-  * @brief A sequential program for generating the Mandelbrot set
+/** @file Static.cpp
+  * @brief A statically assigned parallelized Mandelbrot calculator
   * @author Tyler DeFoor
-  * @date 3/2/2017
+  * @date 3/4/2017
   * @version 1.0
   */
  
 #include "PIMFuncs.h"
-#include "Mandelbrot_Seq.h"
-#include <cmath>
+#include "Mandelbrot.h"
 #include <iostream>
 
 #define WIDTH       1920
@@ -17,17 +16,22 @@
 #define REAL_MAX    2.0
 #define IMAG_MIN    -2.0
 #define IMAG_MAX    2.0
+#define MASTER      0
+#define TYPE        MPI_INT
 
 using namespace std;
 
 int main ( int argc, char** argv )
 {
     /* Variable Declarations */
+    //Variables for the world size and current task id
+    int taskid, worldSize;
+
     //Timing variables
     double start, end, total;
 
     //File name
-    const char* const fileName = "Mandelbrot_Seq.pim";
+    const char* const fileName = "Static.pim";
 
     //Map for writing to file
     unsigned char** map;
@@ -36,26 +40,16 @@ int main ( int argc, char** argv )
         map[i] = new unsigned char[WIDTH];
 
     /* End of Variable Declarations */
-
-    //Iterate rows from 0 to HEIGHT - 1
-    for ( int row = 0; row < HEIGHT; row++ )
-    {
-        //Iterate columns from 0 to WIDTH - 1
-        for ( int column = 0; column < WIDTH; column++ )
-        {
-            //Create the current complex number with the coordinates
-            Complex current;
-            current.real = REAL_MIN + column * (REAL_MAX - REAL_MIN) / WIDTH;
-            current.imag = IMAG_MIN + row * (IMAG_MAX - IMAG_MIN) / HEIGHT;
-
-            //Set the map coordinate to the value of the Mandelbrot calculation
-            map[row][column] = calculate ( current );
-        }
-    }
-    pim_write_black_and_white(fileName, WIDTH, HEIGHT, (const unsigned char**)map);
-    return 0;
 }
 
+ /**Calculate
+ *@fn calculate ( Complex coordinate )
+ *@brief Determines whether a complex number is a member of the Mandelbrot set
+ *@param coordinate The complex number to be tested
+ *@return count The number of times the number was tested - maximum 256
+ *@pre The parameter, coordinate, has relevant information
+ *@post Nothing in coordinate is changed. 
+ */
 unsigned char calculate ( Complex coordinate )
 {
     //Keep track of the count 
@@ -89,8 +83,6 @@ unsigned char calculate ( Complex coordinate )
         count++;
 
     } while ( ( squarelength < 4.0) && ( count < ITERATIONS ) );
-
-    //count -= 1;
 
     //Return the number of iterations we went through
     return (unsigned char)count;

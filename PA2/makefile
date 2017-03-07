@@ -1,11 +1,17 @@
-Mandelbrot_Seq: PIMFuncs.o Mandelbrot_Seq.o
-	g++ Mandelbrot_Seq.o PIMFuncs.o -o Mandelbrot_Seq
+Sequential: PIMFuncs.o Sequential.o
+	g++ Sequential.o PIMFuncs.o -o Sequential
 
-Mandelbrot_Seq.o: Mandelbrot_Seq.cpp
-	g++ -c Mandelbrot_Seq.cpp
+Static: Static.o PIMFuncs.o
+	mpicxx -Wall -lpmi -o Static Static.o PIMFuncs.o
+
+Static.o: Static.cpp
+	mpicxx -Wall -lpmi -c Static.cpp
+
+Sequential.o: Sequential.cpp
+	g++ -c Sequential.cpp
 
 PIMFuncs.o: PIMFuncs.cpp
 	g++ -c PIMFuncs.cpp
 
 clean:
-	\rm Mandelbrot_Seq *.o *.out *.txt
+	\rm Sequential Static *.o *.out *.txt *.pim 
