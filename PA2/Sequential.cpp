@@ -4,13 +4,12 @@
   * @date 3/2/2017
   * @version 1.0
   */
- 
+
+#include "mpi.h"
 #include "PIMFuncs.h"
 #include "Mandelbrot.h"
 #include <iostream>
 
-#define WIDTH       1920
-#define HEIGHT      1080
 #define ITERATIONS  256
 #define REAL_MIN    -2.0
 #define REAL_MAX    2.0
@@ -36,6 +35,10 @@ int main ( int argc, char** argv )
 
     /* End of Variable Declarations */
 
+    MPI_Init ( &argc, &argv );
+
+    start = MPI_Wtime (  );
+
     //Iterate rows from 0 to HEIGHT - 1
     for ( int row = 0; row < HEIGHT; row++ )
     {
@@ -51,6 +54,12 @@ int main ( int argc, char** argv )
             map[row][column] = calculate ( current );
         }
     }
+
+    end = MPI_Wtime (  );
+
+    total = end - start;
+
+    cout << "Total time: " << total << endl;
     pim_write_black_and_white(fileName, WIDTH, HEIGHT, (const unsigned char**)map);
     return 0;
 }
