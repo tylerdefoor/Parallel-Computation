@@ -10,6 +10,8 @@
 #include "Mandelbrot.h"
 #include <iostream>
 
+#define WIDTH       20000
+#define HEIGHT      20000
 #define ITERATIONS  256
 #define REAL_MIN    -2.0
 #define REAL_MAX    2.0
@@ -60,6 +62,7 @@ int main ( int argc, char** argv )
     total = end - start;
 
     cout << "Total time: " << total << endl;
+
     pim_write_black_and_white(fileName, WIDTH, HEIGHT, (const unsigned char**)map);
     return 0;
 }
