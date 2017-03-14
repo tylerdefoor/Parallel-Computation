@@ -1,11 +1,11 @@
 Sequential: PIMFuncs.o Sequential.o
 	mpicxx -Wall -lpmi Sequential.o PIMFuncs.o -o Sequential
 
-Static: Static.o PIMFuncs.o
-	mpicxx -Wall -lpmi -o Static Static.o PIMFuncs.o
+Dynamic: Dynamic.o PIMFuncs.o
+	mpicxx -Wall -lpmi Dynamic.o PIMFuncs.o -o Dynamic
 
-Static.o: Static.cpp
-	mpicxx -Wall -lpmi -c Static.cpp
+Dynamic.o: Dynamic.cpp
+	mpicxx -Wall -lpmi -c Dynamic.cpp
 
 Sequential.o: Sequential.cpp
 	mpicxx -Wall -lpmi -c Sequential.cpp

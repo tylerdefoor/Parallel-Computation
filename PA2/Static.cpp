@@ -66,6 +66,11 @@ int main ( int argc, char** argv )
         for ( int i = 0; i < HEIGHT; i++ )
             map[i] = new unsigned char[WIDTH];
 
+        unsigned char** receiver;
+        receiver = new unsigned char*[rowsPerSlave];
+        for ( int i = 0; i < rowsPerSlave; i++ )
+            receiver[i] = new unsigned char[WIDTH];
+
 
         for ( int i = 0; i < numSlaves; i++ )
         {
@@ -101,7 +106,10 @@ int main ( int argc, char** argv )
 
         for ( int i = 0; i < numSlaves; i++ )
         {
-            MPI_recv(buf, 32, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            for ( int j = 0; j < rowsPerSlave; j++ )
+            {
+                MPI_recv(&receiver, 32, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            }
         }
 
 
