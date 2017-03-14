@@ -57,7 +57,6 @@ int main ( int argc, char** argv )
     if ( taskid == MASTER )
     {
         rowsCalculated = 0;
-        finished = false;
 
         //Map for writing to file
         unsigned char** map;
@@ -106,9 +105,11 @@ int main ( int argc, char** argv )
                 map[status.MPI_TAG][i] = receiver[i];
             }
 
+            int terminator = -1;
             //Send the returning slave another row
-            MPI_Send ( -1, NUM_OBJECTS, INT_TYPE, status.MPI_SOURCE, 0, MPI_COMM_WORLD );
+            MPI_Send ( &terminator, NUM_OBJECTS, INT_TYPE, status.MPI_SOURCE, 0, MPI_COMM_WORLD );
         }
+        pim_write_black_and_white(fileName, WIDTH, HEIGHT, (const unsigned char**)map);
     }
 
     //If we are a slave
@@ -142,10 +143,6 @@ int main ( int argc, char** argv )
             MPI_Recv ( &currentRow, 1, INT_TYPE, MASTER, 0, MPI_COMM_WORLD, &status );
         }
     }
-
-    //Write to file
-    pim_write_black_and_white(fileName, WIDTH, HEIGHT, (const unsigned char**)map);
-
 }
 
  /**Calculate
