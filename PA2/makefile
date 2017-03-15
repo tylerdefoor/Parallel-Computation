@@ -1,4 +1,4 @@
-Sequential: PIMFuncs.o Sequential.o
+Sequential: PIMFuncs.o Sequential.o Dynamic
 	mpicxx -Wall -lpmi Sequential.o PIMFuncs.o -o Sequential
 
 Dynamic: Dynamic.o PIMFuncs.o
