@@ -9,9 +9,10 @@
 #include "PIMFuncs.h"
 #include "Mandelbrot.h"
 #include <iostream>
+#include <stdlib.h>
 
-#define WIDTH       20000
-#define HEIGHT      20000
+//#define WIDTH       35000
+//#define HEIGHT      35000
 #define ITERATIONS  256
 #define REAL_MIN    -2.0
 #define REAL_MAX    2.0
@@ -25,6 +26,9 @@ int main ( int argc, char** argv )
     /* Variable Declarations */
     //Timing variables
     double start, end, total;
+
+    int WIDTH = atoi(argv[1]);
+    int HEIGHT = atoi(argv[2]);
 
     //File name
     const char* const fileName = "Sequential.pim";

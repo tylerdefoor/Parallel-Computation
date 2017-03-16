@@ -9,9 +9,10 @@
 #include "PIMFuncs.h"
 #include "Mandelbrot.h"
 #include <iostream>
+#include <stdlib.h>
 
-#define WIDTH       1920
-#define HEIGHT      1080
+//#define WIDTH       20000
+//#define HEIGHT      20000
 #define ITERATIONS  256
 #define REAL_MIN    -2.0
 #define REAL_MAX    2.0
@@ -32,6 +33,9 @@ int main ( int argc, char** argv )
 
     //Timing variables
     double start, end, total;
+
+    int WIDTH = atoi(argv[1]);
+    int HEIGHT = atoi(argv[2]);
 
     //File name
     const char* const fileName = "Dynamic.pim";
@@ -67,38 +71,33 @@ int main ( int argc, char** argv )
         //Array to receive the calculated row
         unsigned char* receiver = new unsigned char[WIDTH];
 
-        cout << "Before the intial send" << endl;
+        start = MPI_Wtime (  );
+
         //Send each slave a row
         for ( int i = 0; i < numSlaves; i++ )
         {
             MPI_Send ( &rowsCalculated, NUM_OBJECTS, INT_TYPE, (i + 1), 0, MPI_COMM_WORLD );
             rowsCalculated++;
-            cout << "Sent row: " << rowsCalculated << endl;
         }
 
-        cout << "After the initial send" << endl;
 
         //While there are still rows to calculate
         while ( rowsCalculated < HEIGHT )
         {
-            cout << "Master waiting to receive" << endl;
             //Receive a row
             MPI_Recv ( receiver, WIDTH, CHAR_TYPE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status );
 
-                cout << "Received row: " << status.MPI_TAG << endl;
             //Put the row into the map
             for ( int i = 0; i < WIDTH; i++ )
             {
                 map[status.MPI_TAG][i] = receiver[i];
             }
 
-            cout << "Sneding row: " << rowsCalculated << endl;
             //Send the returning slave another row
             MPI_Send ( &rowsCalculated, NUM_OBJECTS, INT_TYPE, status.MPI_SOURCE, 0, MPI_COMM_WORLD );
 
             //Increase rowsCalculated
             rowsCalculated++;
-            cout << "Sent row: " << rowsCalculated << endl;
         }
 
         //Loop through all the slaves again
@@ -117,6 +116,12 @@ int main ( int argc, char** argv )
             //Send the returning slave another row
             MPI_Send ( &terminator, NUM_OBJECTS, INT_TYPE, status.MPI_SOURCE, 0, MPI_COMM_WORLD );
         }
+
+        end = MPI_Wtime (  );
+
+        total = end - start;
+
+        cout << "Total time for  " << WIDTH << " " << HEIGHT << ": " << total << endl;
         pim_write_black_and_white(fileName, WIDTH, HEIGHT, (const unsigned char**)map);
     }
 
@@ -132,7 +137,6 @@ int main ( int argc, char** argv )
         //The master will send -1 when all rows are calculated
         while ( currentRow != -1 )
         {
-            cout << "Slave calculating row: " << currentRow << endl;
             //Loop through the row and calculate 
             for ( int column = 0; column < WIDTH; column++ )
             {
@@ -145,16 +149,11 @@ int main ( int argc, char** argv )
                 row[column] = calculate ( current );
             }
 
-            cout << "Slave calculated row, sending" << endl;
-
             //Send the row to master with the tag as the calculated row number
             MPI_Send ( row, WIDTH, CHAR_TYPE, MASTER, currentRow, MPI_COMM_WORLD );
 
-            cout << "Slave sent" << endl;
-
             //Get the next row
             MPI_Recv ( &currentRow, 1, INT_TYPE, MASTER, 0, MPI_COMM_WORLD, &status );
-            cout << "Slave receiving" << endl;
         }
     }
 }
