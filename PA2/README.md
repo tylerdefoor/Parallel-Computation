@@ -1,7 +1,7 @@
-#Tyler DeFoor
-#PA2 - Mandelbrot
+# Tyler DeFoor
+# PA2 - Mandelbrot
 
-##Sequential
+## Sequential
 A sequential implementation of Mandelbrot. 
 
 Run instructions
@@ -9,7 +9,7 @@ Run instructions
 2. make
 3. sbatch Sequential.sh
 
-##Dynamic
+## Dynamic
 A dynamically allocated parallel implementation of Mandelbrot. 
 
 Run instructions
