@@ -1,5 +1,2 @@
-# Anything that is in a build folder
-PA*/build/*
-
 # Any executables
 *.out
