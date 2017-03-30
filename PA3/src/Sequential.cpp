@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <fstream>
 #include <string.h>
+#include <vector>
+#include <algorithm>
 
 #define MASTER      0
 #define INT_TYPE    MPI_INT
@@ -30,10 +32,13 @@ int main ( int argc, char** argv )
     char* filename = argv[1];
 
     //The total number of elements, the maximum, and the range of the numbers
-    int totalNums, max, range;
+    int totalNums, range;
 
     //The unsorted array of ints
-    int* unsorted;
+    int* unsorted, sorted;
+
+    //The start, end, and total time
+    double start, end, total;
 
     //Can put in another argument to set number of buckets
     if ( argc == 2 )
@@ -50,6 +55,7 @@ int main ( int argc, char** argv )
 
     //File I/O - More like FUN I/O
     ifstream fin;
+
     /* End of Variable Declarations */
 
     //Initialize MPI
@@ -65,12 +71,76 @@ int main ( int argc, char** argv )
         cout << "File failure: Try again later" << endl;
     }
 
+    //Get the total number of ints
     fin >> totalNums;
     unsorted = new int[totalNums];
+    sorted = new int[totalNums];
 
+    //Read in the numbers
+    for ( int i = 0; i < totalNums; i++ )
+        fin >> unsorted[i];
+
+    //Close the file
+    fin.close (  );
+
+    //Start the timer
+    start = MPI_Wtime (  );
+
+    //Bucket sort everything
+    bucketsort ( unsorted, &sorted, max, numBuckets, totalNums );
+
+    //End the timer
+    end = MPI_Wtime (  );
+
+    //Calculate the total time
+    total = end - start;
+
+    //Output the time for totalNums
+    cout << totalNums << " " << total << endl;
+
+    //Finalize MPI
+    MPI_Finalize();
+
+    return 0;
 }
 
-int* bucketsort ( int* unsorted, int max, int numBuckets )
+ /**bucketsort
+ *@fn bucketsort ( int* unsorted, int* &sorted, int max, int numBuckets, int totalNums )
+ *@brief Sorts unsorted using bucketsort into sorted
+ *@param unsorted The unsorted list of numbers
+ *@param sorted The sorted list of numbers
+ *@param max The maximum number
+ *@param numBuckets The number of buckets
+ *@param totalNums The number of elements in the array
+ *@return N/A
+ *@pre unsorted and sorted are allocated and unsorted holds relevant data
+ *@post sorted contains all of the numbers of unsorted, but sorted
+ */
+void bucketsort ( int* unsorted, int* &sorted, int max, int numBuckets, int totalNums )
 {
+    //The bucket the number is supposed to go to
+    int myBucket = max / numBuckets;
 
+    //Create a vector of ints because vectors are great
+    vector<int> buckets[numBuckets];
+
+    //Put them in their buckets
+    for ( int i = 0; i < totalNums; i++ ) 
+        buckets[unsorted[i] / myBucket].push_back ( unsorted[i] );
+
+    //The current index
+    int current = 0;
+
+    //Loop through all of the buckets
+    for ( int i = 0; i < numBuckets; i++ ) 
+    {
+        //Sort the bucket
+        sort ( buckets[i].begin (  ), buckets[i].end (  ) );
+
+        //memcpy it back into the original because its super speedy
+        memcpy ( &sorted[current], buckets[i].data (  ), sizeof(int) *buckets[i].size (  ) );
+
+        //Update current index
+        current += buckets[i].size (  );
+    }
 }
