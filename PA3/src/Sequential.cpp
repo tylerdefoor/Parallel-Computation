@@ -137,13 +137,42 @@ void bucketsort ( int* unsorted, int* &sorted, int max, int numBuckets, int tota
     for ( int i = 0; i < numBuckets; i++ ) 
     {
         //Sort the bucket
-        sort ( buckets[i].begin (  ), buckets[i].end (  ) );
+        bubbleSort ( buckets[i] );
 
         //memcpy it back into the original because its super speedy
-        memcpy ( &sorted[current], buckets[i].data (  ), sizeof(int) *buckets[i].size (  ) );
+        //Uncomment to turn it on/off
+        //memcpy ( &sorted[current], buckets[i].data (  ), sizeof(int) *buckets[i].size (  ) );
 
         //Update current index
         current += buckets[i].size (  );
     }
 
+}
+
+ /**bubblesort
+ *@fn void bubbleSort(vector<int>& a)
+ *@brief Sorts a vector using bubblesort
+ *@param a The vector to be sorted
+ *@return N/A
+ *@pre a contains relevant data
+ *@post a is sorted
+ */
+void bubbleSort(vector<int>& a)
+{
+    bool swap = true;
+
+    while(swap)
+    {
+        swap = false;
+        for (size_t i = 0; i < a.size()-1; i++) 
+        {
+            if ( a[i]>a[i+1] )
+            {
+                a[i] += a[i+1];
+                a[i+1] = a[i] - a[i+1];
+                a[i] -=a[i+1];
+                swapp = true;
+            }
+        }
+    }
 }
