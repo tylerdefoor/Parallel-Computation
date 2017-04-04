@@ -80,22 +80,49 @@ int main ( int argc, char** argv )
             for ( int j = 0; j < (totalNums / numBuckets); j++ )
             {
                 fin >> unsorted;
+
+                //Check for the max
+                if ( unsorted[j] > max )
+                    max = unsorted[j]
             }
 
             MPI_Send ( unsorted, (totalNums / numBuckets), MPI_INT, i, 0, MPI_COMM_WORLD );
         }
 
         //Read in what the master takes care of
-        while ( fin >> unsorted )
+        for ( int i = 0; i < masterWidth; i++ )
         {
-            //I just want to read in the stuff and nothing else and that's a fancy way of doing it so here's a comment
+            fin >> unsorted;
+
+            //Check for the max again
+            if ( unsorted[i] > max )
+                max = unsorted[i]
         }
+
+        //For super secret purposes
+        max += 10;
+
+        //Broadcast the max to all processes
+        MPI_Bcast ( &max, 1, MPI_INT, MASTER, MPI_COMM_WORLD );
 
         //Close the file
         fin.close (  );
 
+        //Block because we all want to start at the same time
+        MPI_Barrier ( MPI_COMM_WORLD );
+
         //Start the timer
         start = MPI_Wtime (  );
+
+        //The bucket the number is supposed to go to
+        int myBucket = max / numBuckets;
+
+        //Create a vector of ints because vectors are great
+        vector<int> buckets[numBuckets];
+
+        //Put them in their buckets
+        for ( int i = 0; i < totalNums; i++ ) 
+            buckets[unsorted[i] / myBucket].push_back ( unsorted[i] );
 
         //End the timer
         end = MPI_Wtime (  );
@@ -117,6 +144,22 @@ int main ( int argc, char** argv )
 
         //Receive the unsorted array
         MPI_Recv ( unsorted, (totalNums / numBuckets), MPI_INT, MASTER, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+
+        //Receive the max
+        MPI_Bcast ( &max, 1, MPI_INT, MASTER, MPI_COMM_WORLD );
+
+        //Block because we all want to start at the same time
+        MPI_Barrier ( MPI_COMM_WORLD );
+
+        //The bucket the number is supposed to go to
+        int myBucket = max / numBuckets;
+
+        //Create a vector of ints because vectors are great
+        vector<int> buckets[numBuckets];
+
+        //Put them in their buckets
+        for ( int i = 0; i < totalNums; i++ ) 
+            buckets[unsorted[i] / myBucket].push_back ( unsorted[i] );
     }
     //Finalize MPI
     MPI_Finalize();
