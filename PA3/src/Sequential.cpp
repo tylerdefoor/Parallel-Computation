@@ -171,7 +171,7 @@ void bubbleSort(vector<int>& a)
                 a[i] += a[i+1];
                 a[i+1] = a[i] - a[i+1];
                 a[i] -=a[i+1];
-                swapp = true;
+                swap = true;
             }
         }
     }

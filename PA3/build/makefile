@@ -16,5 +16,5 @@ Generator:
 	gcc -o Generator ../src/generator.c
 
 clean:
-	\rm Sequential *.o *.out
+	\rm Sequential Dynamic *.o *.out
 
