@@ -20,6 +20,7 @@ using namespace std;
 
 void bucketsort ( int* unsorted, int* &sorted, int max, int numBuckets, int totalNums );
 void read ( char* filename, int totalNums );
+void bubbleSort(vector<int>& a);
 
 int main ( int argc, char** argv )
 {
@@ -29,7 +30,7 @@ int main ( int argc, char** argv )
     char* filename = argv[1];
 
     //The total number of elements, the maximum, and the range of the numbers
-    int totalNums, numBuckets, max, taskid, leftovers;
+    int totalNums, numBuckets, max, taskid, count;
 
     //The unsorted array of ints
     int* unsorted;
@@ -43,6 +44,8 @@ int main ( int argc, char** argv )
 
     //Initialize MPI
     MPI_Init ( &argc, &argv );
+
+    MPI_Status status;
 
     //Get the world size
     MPI_Comm_size ( MPI_COMM_WORLD, &numBuckets );
@@ -68,11 +71,8 @@ int main ( int argc, char** argv )
         //Broadcast the total numbers to all processes
         MPI_Bcast ( &totalNums, 1, MPI_INT, MASTER, MPI_COMM_WORLD );
 
-        //The master takes care of the leftovers
-        int masterWidth = ( totalNums / numBuckets ) + ( totalNums % numBuckets );
-
         //The unsorted array
-        unsorted = new int[masterWidth];
+        unsorted = new int[( totalNums / numBuckets )];
 
         //Read in the numbers and send to the slaves
         for ( int i = 1; i < numBuckets; i++ )
@@ -90,7 +90,7 @@ int main ( int argc, char** argv )
         }
 
         //Read in what the master takes care of
-        for ( int i = 0; i < masterWidth; i++ )
+        for ( int i = 0; i < ( totalNums / numBuckets ); i++ )
         {
             fin >> unsorted;
 
@@ -108,21 +108,56 @@ int main ( int argc, char** argv )
         //Close the file
         fin.close (  );
 
-        //Block because we all want to start at the same time
-        MPI_Barrier ( MPI_COMM_WORLD );
-
-        //Start the timer
-        start = MPI_Wtime (  );
-
         //The bucket the number is supposed to go to
         int myBucket = max / numBuckets;
 
         //Create a vector of ints because vectors are great
         vector<int> buckets[numBuckets];
 
+        //Temp to hold a small bucket before transferring to big bucket
+        int* temp = new int[( totalNums / numBuckets )]
+
+        //Block because we all want to start at the same time
+        MPI_Barrier ( MPI_COMM_WORLD );
+
+        //Start the timer
+        start = MPI_Wtime (  );
+
         //Put them in their buckets
         for ( int i = 0; i < totalNums; i++ ) 
             buckets[unsorted[i] / myBucket].push_back ( unsorted[i] );
+
+        //Put our bucket in the big bucket
+        vector<int> bigBucket (buckets[taskid])
+
+        //Send and receive to the big buckets
+        for ( int i = 0; i < numBuckets; i++ )
+        {
+            if ( i == taskid )
+            {
+                //Receive the small buckets
+                for ( int j = 0; j < numBuckets - 1; j++ )
+                {
+                    //Receive a small bucket
+                    MPI_Recv ( temp, ( totalNums / numBuckets ), MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status );
+
+                    //Get the number of things receieved
+                    MPI_Get_count(&status, MPI_INT, &count);
+
+                    //Put the small bucket into the big bucket
+                    for (int k = 0; k < count; k++ )
+                        bigBucket.push_back ( temp[k] );
+                }
+            }
+            else
+            {
+                //Send the small bucket to the slave
+                MPI_Send ( buckets[i].begin (  ), buckets[i].size (  ), i, 0, MPI_COMM_WORLD );
+            }
+        }
+
+        //Bubble sort the bucket
+        bubbleSort ( bigBucket );
 
         //End the timer
         end = MPI_Wtime (  );
@@ -148,21 +183,80 @@ int main ( int argc, char** argv )
         //Receive the max
         MPI_Bcast ( &max, 1, MPI_INT, MASTER, MPI_COMM_WORLD );
 
-        //Block because we all want to start at the same time
-        MPI_Barrier ( MPI_COMM_WORLD );
-
         //The bucket the number is supposed to go to
         int myBucket = max / numBuckets;
 
         //Create a vector of ints because vectors are great
         vector<int> buckets[numBuckets];
 
+        //Block because we all want to start at the same time
+        MPI_Barrier ( MPI_COMM_WORLD );
+
         //Put them in their buckets
         for ( int i = 0; i < totalNums; i++ ) 
             buckets[unsorted[i] / myBucket].push_back ( unsorted[i] );
+
+        vector<int> bigBucket (buckets[taskid]);
+
+        //Send and receive to the big buckets
+        for ( int i = 0; i < numBuckets; i++ )
+        {
+            if ( i == taskid )
+            {
+                //Receive the small buckets
+                for ( int j = 0; j < numBuckets - 1; j++ )
+                {
+                    //Receive a small bucket
+                    MPI_Recv ( temp, ( totalNums / numBuckets ), MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status );
+
+                    //Get the number of things receieved
+                    MPI_Get_count(&status, MPI_INT, &count);
+
+                    //Put the small bucket into the big bucket
+                    for (int k = 0; k < count; k++ )
+                        bigBucket.push_back ( temp[k] );
+                }
+            }
+            else
+            {
+                //Send the small bucket to the slave
+                MPI_Send ( buckets[i].begin (  ), buckets[i].size (  ), i, 0, MPI_COMM_WORLD );
+            }
+        }
+
+        //Bubble sort the bucket
+        bubbleSort ( bigBucket );
     }
     //Finalize MPI
     MPI_Finalize();
 
     return 0;
+}
+
+ /**bubblesort
+ *@fn void bubbleSort(vector<int>& a)
+ *@brief Sorts a vector using bubblesort
+ *@param a The vector to be sorted
+ *@return N/A
+ *@pre a contains relevant data
+ *@post a is sorted
+ */
+void bubbleSort(vector<int>& a)
+{
+    bool swap = true;
+
+    while(swap)
+    {
+        swap = false;
+        for (size_t i = 0; i < a.size()-1; i++) 
+        {
+            if ( a[i]>a[i+1] )
+            {
+                a[i] += a[i+1];
+                a[i+1] = a[i] - a[i+1];
+                a[i] -=a[i+1];
+                swapp = true;
+            }
+        }
+    }
 }

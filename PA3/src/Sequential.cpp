@@ -19,6 +19,7 @@
 using namespace std;
 
 void bucketsort ( int* unsorted, int* &sorted, int max, int numBuckets, int totalNums );
+void bubbleSort(vector<int>& a);
 
 int main ( int argc, char** argv )
 {
@@ -36,7 +37,6 @@ int main ( int argc, char** argv )
 
     //The start, end, and total time
     double start, end, total;
-
 
     numBuckets = 10;
     //Can put in another argument to set number of buckets
