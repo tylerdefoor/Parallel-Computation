@@ -12,9 +12,6 @@ Dynamic.o:
 Sequential.o:
 	mpicxx -Wall -lpmi -c ../src/Sequential.cpp
 
-Generator:
-	gcc -o Generator ../src/generator.c
-
 clean:
 	\rm Sequential Dynamic *.o *.out
 
