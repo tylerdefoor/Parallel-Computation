@@ -24,7 +24,6 @@ void bubbleSort(vector<int>& a);
 
 int main ( int argc, char** argv )
 {
-    cout << "Start of program" << endl;
 
     /* Variable Declarations */
     //The filename
@@ -34,7 +33,7 @@ int main ( int argc, char** argv )
     int totalNums = atoi(argv[1]);
 
     //A static maximum
-    int max = 1000;
+    int max = 100000;
 
     //The total number of buckets, taskid, and a counter variable
     int numBuckets, taskid, count;
@@ -59,7 +58,6 @@ int main ( int argc, char** argv )
     //Get Rank
     MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
 
-    cout << "After intitializations" << endl;
 
     //If we are the master
     if ( taskid == MASTER )
@@ -110,7 +108,6 @@ int main ( int argc, char** argv )
         }
 
         //For super secret purposes
-        max = 1000;
 
         //Broadcast the max to all processes
         MPI_Bcast ( &max, 1, MPI_INT, MASTER, MPI_COMM_WORLD );
@@ -177,7 +174,7 @@ int main ( int argc, char** argv )
         total = end - start;
 
         //Output the time for totalNums
-        cout << totalNums << " " << total << endl;
+        cout << numBuckets << " " << totalNums << " " << total << endl;
     }
     //If we are a slave
     else

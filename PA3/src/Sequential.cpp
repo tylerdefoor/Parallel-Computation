@@ -35,7 +35,7 @@ int main ( int argc, char** argv )
     int numBuckets = 10;
 
     //The max of the numbers
-    int max = 1000;
+    int max = 100000;
 
     //The unsorted array of ints
     int* unsorted;
@@ -76,7 +76,6 @@ int main ( int argc, char** argv )
     unsorted = new int[totalNums];
     sorted = new int[totalNums];
 
-    max = 0;
     //Read in the numbers
     for ( int i = 0; i < totalNums; i++ )
     {
@@ -87,7 +86,7 @@ int main ( int argc, char** argv )
     max += 10;
 
     //Close the file
-    fin.close (  );
+    //fin.close (  );
 
     //Start the timer
     start = MPI_Wtime (  );
