@@ -26,10 +26,16 @@ int main ( int argc, char** argv )
 
     /* Variable Declarations */
     //The filename
-    char* filename = argv[1];
+    //char* filename = argv[1];
+    
+    //Get total nums for random number generation
+    int totalNums = atoi(argv[1]);
 
-    //The total number of elements, the maximum, and the range of the numbers
-    int totalNums, numBuckets, max;
+    //The total number of buckets
+    int numBuckets = 10;
+
+    //The max of the numbers
+    int max = 1000;
 
     //The unsorted array of ints
     int* unsorted;
@@ -52,6 +58,7 @@ int main ( int argc, char** argv )
     //Initialize MPI
     MPI_Init ( &argc, &argv );
 
+    /*
     //A try catch for opening files because I'm a good programmer
     try
     {
@@ -64,7 +71,8 @@ int main ( int argc, char** argv )
 
     //Get the total number of ints
     fin >> totalNums;
-
+    */
+   
     unsorted = new int[totalNums];
     sorted = new int[totalNums];
 
@@ -72,11 +80,8 @@ int main ( int argc, char** argv )
     //Read in the numbers
     for ( int i = 0; i < totalNums; i++ )
     {
-        fin >> unsorted[i];
-
-        //Get the max number
-        if (unsorted[i] > max)
-            max = unsorted[i];
+        //fin >> unsorted[i];
+        unsorted[i] = (rand (  ) % max);
     }
 
     max += 10;
@@ -97,7 +102,7 @@ int main ( int argc, char** argv )
     total = end - start;
 
     //Output the time for totalNums
-    cout << totalNums << " " << total << endl;
+    cout << "1 " << totalNums << " " << total << endl;
 
     //Finalize MPI
     MPI_Finalize();

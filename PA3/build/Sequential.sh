@@ -5,4 +5,4 @@
 #SBATCH --mail-user=tylerleedefoor@gmail.com
 #SBATCH --mail-type=ALL
 
-srun Sequential numbers >> Sequential.txt
+srun Sequential 100000 >> Sequential.txt

@@ -28,10 +28,16 @@ int main ( int argc, char** argv )
 
     /* Variable Declarations */
     //The filename
-    char* filename = argv[1];
+    //char* filename = argv[1];
+    
+    //Read in the total number of numbers
+    int totalNums = atoi(argv[1]);
 
-    //The total number of elements, the maximum, and the range of the numbers
-    int totalNums, numBuckets, max, taskid, count;
+    //A static maximum
+    int max = 1000;
+
+    //The total number of buckets, taskid, and a counter variable
+    int numBuckets, taskid, count;
 
     //The unsorted array of ints
     int* unsorted;
@@ -59,6 +65,7 @@ int main ( int argc, char** argv )
     if ( taskid == MASTER )
     {
         //A try catch for opening files because I'm a good programmer
+        /*
         try
         {
             fin.open ( filename );
@@ -67,14 +74,12 @@ int main ( int argc, char** argv )
         {
             cout << "File failure: Try again later" << endl;
         }
-        cout << "Master opened file" << endl;
+        */
         //Get the total number of ints
-        fin >> totalNums;
+        //fin >> totalNums;
 
         //Broadcast the total numbers to all processes
         MPI_Bcast ( &totalNums, 1, MPI_INT, MASTER, MPI_COMM_WORLD );
-
-        cout << "Master bcast totalNums" << endl;
 
         //The unsorted array
         unsorted = new int[( totalNums / numBuckets )];
@@ -84,35 +89,31 @@ int main ( int argc, char** argv )
         {
             for ( int j = 0; j < (totalNums / numBuckets); j++ )
             {
-                fin >> unsorted[j];
-
+                //fin >> unsorted[j];
+                unsorted[j] = (rand (  ) % max);
                 //Check for the max
-                if ( unsorted[j] > max )
-                    max = unsorted[j];
+                /*if ( unsorted[j] > max )
+                    max = unsorted[j];*/
             }
 
             MPI_Send ( unsorted, (totalNums / numBuckets), MPI_INT, i, 0, MPI_COMM_WORLD );
-            cout << "Master sent to slave " << i << endl;
         }
 
         //Read in what the master takes care of
         for ( int i = 0; i < ( totalNums / numBuckets ); i++ )
         {
-            fin >> unsorted[i];
-
+            //fin >> unsorted[i];
+            unsorted[i] = (rand (  ) % max);
             //Check for the max again
-            if ( unsorted[i] > max )
-                max = unsorted[i];
+            /*if ( unsorted[i] > max )
+                max = unsorted[i];*/
         }
-        cout << "Master put into its own unsorted" << endl;
 
         //For super secret purposes
         max = 1000;
 
         //Broadcast the max to all processes
         MPI_Bcast ( &max, 1, MPI_INT, MASTER, MPI_COMM_WORLD );
-        cout << "Master bcast max of " << max << endl;
-
         //Close the file
         fin.close (  );
 
@@ -127,24 +128,18 @@ int main ( int argc, char** argv )
 
         //Block because we all want to start at the same time
         MPI_Barrier ( MPI_COMM_WORLD );
-        cout << "Master past barrier" << endl;
 
         //Start the timer
         start = MPI_Wtime (  );
-
-        cout << "Master before putting into small buckets" << endl;
 
         //Put them in their buckets
         for ( int i = 0; i < (totalNums / numBuckets); i++ )
         {
             buckets[unsorted[i] / myBucket].push_back ( unsorted[i] );
         }
-        
-        cout << "Master put into small buckets" << endl;
 
         //Put our bucket in the big bucket
         vector<int> bigBucket (buckets[taskid]);
-        cout << "Master put it's bucket into the big bucket" << endl;
 
         //Send and receive to the big buckets
         for ( int i = 0; i < numBuckets; i++ )
@@ -169,13 +164,11 @@ int main ( int argc, char** argv )
             {
                 //Send the small bucket to the slave
                 MPI_Send ( &(buckets[i].front (  )), buckets[i].size (  ), MPI_INT, i, 0, MPI_COMM_WORLD );
-                cout << "Master sent to slave " << i << endl;
             }
         }
 
         //Bubble sort the bucket
         bubbleSort ( bigBucket );
-        cout << "Master bubblesorted bucket" << endl;
 
         //End the timer
         end = MPI_Wtime (  );
@@ -200,27 +193,23 @@ int main ( int argc, char** argv )
 
         //Receive the max
         MPI_Bcast ( &max, 1, MPI_INT, MASTER, MPI_COMM_WORLD );
-        cout << "Slave " << taskid << " received max of " << max << endl;
 
         //The bucket the number is supposed to go to
         int myBucket = max / numBuckets;
 
         //Create a vector of ints because vectors are great
         vector<int> buckets[numBuckets];
-        cout << "Slave " << taskid << " created buckets" << endl;
 
         int* temp = new int[(totalNums / numBuckets)];
 
         //Block because we all want to start at the same time
         MPI_Barrier ( MPI_COMM_WORLD );
-        cout << "Slave " << taskid << " is past barrier" << endl;
 
         //Put them in their buckets
         for ( int i = 0; i < (totalNums / numBuckets); i++ ) 
             buckets[unsorted[i] / myBucket].push_back ( unsorted[i] );
 
-        cout << "Slave " << taskid << " has put data into buckets" << endl;
-
+        //
         vector<int> bigBucket (buckets[taskid]);
 
         //Send and receive to the big buckets

@@ -5,4 +5,4 @@
 #SBATCH --mail-user=tylerleedefoor@gmail.com
 #SBATCH --mail-type=ALL
 
-srun Dynamic numbers >> Dynamic.txt
+srun Dynamic 100000 >> Dynamic.txt
