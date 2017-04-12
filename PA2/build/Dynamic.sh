@@ -6,4 +6,4 @@
 #SBATCH --mail-type=ALL
 #SBATCH --output=Dynamic.txt
 
-srun Dynamic
+srun Dynamic 15000 15000

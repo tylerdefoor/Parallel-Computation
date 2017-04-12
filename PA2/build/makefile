@@ -1,4 +1,4 @@
-all: Seuqntial Dynamic
+all: Sequential Dynamic
 
 Sequential: PIMFuncs.o Sequential.o 
 	mpicxx -Wall -lpmi Sequential.o PIMFuncs.o -o Sequential
@@ -6,15 +6,15 @@ Sequential: PIMFuncs.o Sequential.o
 Dynamic: Dynamic.o PIMFuncs.o
 	mpicxx -Wall -lpmi Dynamic.o PIMFuncs.o -o Dynamic
 
-Dynamic.o: Dynamic.cpp
+Dynamic.o: ../src/Dynamic.cpp
 	mpicxx -Wall -lpmi -c ../src/Dynamic.cpp
 
-Sequential.o: Sequential.cpp
+Sequential.o: ../src/Sequential.cpp
 	mpicxx -Wall -lpmi -c ../src/Sequential.cpp
 
-PIMFuncs.o: PIMFuncs.cpp
+PIMFuncs.o: ../src/PIMFuncs.cpp
 	mpicxx -Wall -lpmi -c ../src/PIMFuncs.cpp
 
 clean:
-	\rm Sequential Dynamic *.o *.out *.txt *.pim 
+	\rm Sequential Dynamic *.o *.txt *.pim 
 

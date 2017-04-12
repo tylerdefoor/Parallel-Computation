@@ -12,7 +12,7 @@
 #include <algorithm>
 #include "mpi.h"
 
-#define MAX     1000
+#define MAX     100
 #define SEED    42
 
 using namespace std;
@@ -28,9 +28,24 @@ int main ( int argc, char** argv )
     int width = atoi(argv[1]);
 
     //The left, right, and resulting matrix
-    int left[width][width];
+/*    int left[width][width];
     int right[width][width];
-    int result[width][width];
+    int result[width][width];*/
+
+    int** left;
+    int** right;
+    int** result;
+
+    left = new int*[width];
+    right = new int*[width];
+    result = new int*[width];
+
+    for ( int i = 0; i < width; i++ )
+    {
+        left[i] = new int[width];
+        right[i] = new int[width];
+        result[i] = new int[width];
+    }
 
     //The start, end, and total time
     double start, end, total;
@@ -74,18 +89,47 @@ int main ( int argc, char** argv )
 
             //Multiply it
             for ( int k = 0; k < width; k++ )
-                result[i][j] += left[i][k] * right[i][k];
+                result[i][j] = result[i][j] + left[i][k] * right[k][j];
         }
     }
 
     //End the timer
     end = MPI_Wtime (  );
+/*
+    //Print out left array
+    for ( int i = 0; i < width; i++ )
+    {
+        for ( int j = 0; j < width; j++ )
+            cout << left[i][j] << " ";
 
+        cout << endl;
+    }
+
+        cout << endl;
+    //Print out right array
+    for ( int i = 0; i < width; i++ )
+    {
+        for ( int j = 0; j < width; j++ )
+            cout << right[i][j] << " ";
+
+        cout << endl;
+    }
+
+        cout << endl;
+    //Print out result array
+    for ( int i = 0; i < width; i++ )
+    {
+        for ( int j = 0; j < width; j++ )
+            cout << result[i][j] << " ";
+
+        cout << endl;
+    }
+*/
     //Calculate the total time
     total = end - start;
 
     //Output the time for totalNums
-    cout << "1 " << totalNums << " " << total << endl;
+    cout << "1 " << width << " " << total << endl;
 
     //Finalize MPI
     MPI_Finalize();

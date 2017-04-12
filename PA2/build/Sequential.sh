@@ -6,4 +6,4 @@
 #SBATCH --mail-type=ALL
 #SBATCH --output=Sequential.txt
 
-srun Sequential
+srun Sequential 15000 15000
