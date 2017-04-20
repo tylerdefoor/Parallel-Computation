@@ -25,8 +25,8 @@ int getCol ( int taskid, int sqrWorldSize );
 int getID ( int row, int col, int sqrWorldSize );
 int get2d ( int row, int col, int width );
 void sendToSlaves ( int worldSize, int** left, int** right, int width );
-int shift ( int destRow, int destCol, vector<int>& source, int sqrWorldSize );
-void multiply ( vector<int> left, vector<int> right, int** result, int row, int col, int width );
+int shift ( int destRow, int destCol, int* source, int sqrWorldSize, int width );
+void multiply ( int* left, int* right, int** result, int row, int col, int width );
 
 //The main function - Boom. There's some documentation
 int main ( int argc, char** argv )
@@ -42,8 +42,10 @@ int main ( int argc, char** argv )
     int taskid, sqrWorldSize, worldSize, myRow, myCol, procWidth, myLeft, myUp;
 
     //Vectors to hold the left and right 
-    vector<int> left;
-    vector<int> right;    
+    /*vector<int> left;
+    vector<int> right;*/
+
+      
 
     //Everyone has their representation of the resulting vector
     int** result;
@@ -85,9 +87,11 @@ int main ( int argc, char** argv )
     //This is the width of each processor's left and right matrix
     procWidth = width / sqrWorldSize;
 
+    int* left = new int[procWidth*procWidth];
+    int* right = new int[procWidth*procWidth];  
 
-    left.resize ( procWidth * procWidth );
-    right.resize ( procWidth * procWidth );
+    /*left.resize ( procWidth * procWidth );
+    right.resize ( procWidth * procWidth );*/
 
     //If we are the master
     if ( taskid == MASTER )
@@ -158,8 +162,8 @@ int main ( int argc, char** argv )
     else
     {
         //Receive the left and the right from master
-        MPI_Recv ( &left.front (  ), width * width, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-        MPI_Recv ( &right.front (  ), width * width, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+        MPI_Recv ( left, procWidth * procWidth, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+        MPI_Recv ( right, procWidth * procWidth, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
         MPI_Barrier ( MPI_COMM_WORLD );
     }    
@@ -185,7 +189,7 @@ int main ( int argc, char** argv )
 
         //Shift the left matrix to its destination, which is the process' row number to the left
         //  with wraping
-        shift ( myRow, destCol, left, sqrWorldSize );
+        shift ( myRow, destCol, left, sqrWorldSize, procWidth );
     }
 
 
@@ -200,7 +204,7 @@ int main ( int argc, char** argv )
 
         //Shift the right matrix to its destination, which is the process' column number up
         //  with wraping
-        shift ( destRow, myCol, right, sqrWorldSize );
+        shift ( destRow, myCol, right, sqrWorldSize, procWidth );
     }
 
 
@@ -212,11 +216,11 @@ int main ( int argc, char** argv )
         MPI_Barrier ( MPI_COMM_WORLD );
 
         //Shift A to the left
-        shift ( myRow, myLeft, left, sqrWorldSize );
+        shift ( myRow, myLeft, left, sqrWorldSize, procWidth );
 
         
         //Shift B to the right
-        shift ( myUp, myCol, right, sqrWorldSize );
+        shift ( myUp, myCol, right, sqrWorldSize, procWidth );
     }
 
     MPI_Barrier ( MPI_COMM_WORLD );
@@ -311,8 +315,12 @@ int get2d ( int row, int col, int width )
 void sendToSlaves ( int worldSize, int** left, int** right, int width )
 {
     int destRow, destCol;
+
+    int* templeft = new int[width*width];
+    int* tempright = new int[width*width];
+    /*
     vector<int> templeft ( width * width );
-    vector<int> tempright ( width * width );
+    vector<int> tempright ( width * width );*/
 
 
     //Loop through all the slaves, starting at taskid 1
@@ -327,17 +335,17 @@ void sendToSlaves ( int worldSize, int** left, int** right, int width )
         {
             for ( int j = destCol * width; j < destCol * ( 2 * width ); j++ )
             {
-                templeft.push_back ( left[i][j] );
-                tempright.push_back ( right[i][j] );
+                templeft[get2d(i,j,width)] = left[i][j];
+                tempright[get2d(i,j,width)] = right[i][j];
             }
         }
 
 
         //Send the left and then the right
-        MPI_Send ( &templeft.front (  ), templeft.size (  ), MPI_INT, currentSlave, 0, MPI_COMM_WORLD );
+        MPI_Send ( templeft, width*width, MPI_INT, currentSlave, 0, MPI_COMM_WORLD );
 
 
-        MPI_Send ( &tempright.front (  ), tempright.size (  ), MPI_INT, currentSlave, 0, MPI_COMM_WORLD );
+        MPI_Send ( tempright, width*width, MPI_INT, currentSlave, 0, MPI_COMM_WORLD );
 
     }
 }
@@ -353,7 +361,7 @@ void sendToSlaves ( int worldSize, int** left, int** right, int width )
  *@pre There is a process with row and column destRow and destCol that will eventually receive and something will eventually send to this process
  *@post The vector source holds the information passed from another process. No other parameters are changed
  */
-int shift ( int destRow, int destCol, vector<int>& source, int sqrWorldSize )
+int shift ( int destRow, int destCol, int* source, int sqrWorldSize, int width )
 {
     MPI_Status status;
 
@@ -363,7 +371,7 @@ int shift ( int destRow, int destCol, vector<int>& source, int sqrWorldSize )
 
     //Send and receive, using source as the only buffer
     //If you're reading this, use this method to be SUPER DUPER EFFICIENT
-    MPI_Sendrecv_replace ( &source.front (  ), source.size (  ) * 2, MPI_INT, dest, 0, MPI_ANY_SOURCE,
+    MPI_Sendrecv_replace ( source, width*width, MPI_INT, dest, 0, MPI_ANY_SOURCE,
                             MPI_ANY_TAG, MPI_COMM_WORLD, &status );
 
     //Return the tag from the sender, just for debugging purposes
@@ -383,7 +391,7 @@ int shift ( int destRow, int destCol, vector<int>& source, int sqrWorldSize )
  *@pre Both left and right hold relevant data
  *@post result holds the multiplied matrix. No other parameters are changed
  */
-void multiply ( vector<int> left, vector<int> right, int** result, int row, int col, int width )
+void multiply ( int* left, int* right, int** result, int row, int col, int width )
 {
     //Loop through the rows
     for ( int i = 0; i < width; i++ )
