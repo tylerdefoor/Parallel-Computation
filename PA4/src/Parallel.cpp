@@ -14,277 +14,461 @@
 #include "mpi.h"
 #include <cmath>
 
-#define MAX     10
+#define MAX     1000
 #define SEED    42
 #define MASTER  0
+#define LEFT    0
+#define RIGHT   1
+#define RESULT  2
 
 using namespace std;
 
+int matrixWidth, size;
+char* fileName;
+bool toFile = true;
+
+//The width of the submatrices, the total size of the submatrices, and the processor width
+int subWidth, subSize, procWidth;
+
+//The left, right, and result matrices
+int* left;
+int* right;
+int* result;
+
+//Timer values
+double start, end;
+
+//The taskid and world size
+int taskid, worldSize;
+
+void printFile ( int* left, int* right, int* result );
+void printMatrix ( int* matrix, int width );
+void parallelMultiplication (  );
+void toSlave ( int row, int col, int* matrix, int* &dest );
 int getRow ( int taskid, int sqrWorldSize );
+void generateMatrix ( int* &matrix );
 int getCol ( int taskid, int sqrWorldSize );
-int getID ( int row, int col, int sqrWorldSize );
-int get2d ( int row, int col, int width );
-void sendToSlaves ( int worldSize, int** left, int** right, int width );
-int shift ( int destRow, int destCol, int* source, int sqrWorldSize, int width, int myRow, int myCol );
-void multiply ( int* left, int* right, int** result, int row, int col, int width );
+void toResult ( int row, int col, int* subMatrix, int* &dest );
+void shiftLeft ( int* &matrix, int rotations, int myRow, int myCol) ;
+void shiftUp ( int* &matrix, int rotations, int myRow, int myCol );
 
 //The main function - Boom. There's some documentation
-int main ( int argc, char** argv )
+int main ( int argc, char* argv[] ) 
 {
+    //Set that sweet sweet buffer
+    setvbuf( stdout, NULL, _IONBF, 0 );
 
-    /* Variable Declarations */
-    
-    //Get total nums for random number generation
-    int width = atoi(argv[1]);
-
-    //The taskID, square root of the world size, the world size, row and column, width of the left and right arrays for processes
-    //and the left and up partners for the processes
-    int taskid, sqrWorldSize, worldSize, myRow, myCol, procWidth, myLeft, myUp;
-
-    //Everyone has their representation of the resulting vector
-    int** result;
-
-    result = new int*[width];
-    for ( int i = 0; i < width; i++ )
-        result[i] = new int[width];
-
-    //Set the result matrix to 0s
-    for ( int i = 0; i < width; i++ )
-    {
-        for ( int j = 0; j < width; j++ )
-            result[i][j] = 0;
-    }
-
-    //The start, end, and total time
-    double start, end, total;
-
-    start = 0.0;
-
-    /* End of Variable Declarations */
+    //Seed the random number generator
+    srand ( SEED );
 
     //Initialize MPI
     MPI_Init ( &argc, &argv );
 
-    //Get the World size
+    fileName = argv[1];
+
+    matrixWidth = atoi ( argv[2] );
+
+    //Get the taskid and world size
+    MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
     MPI_Comm_size ( MPI_COMM_WORLD, &worldSize );
 
-    //Get the square root of the world size for super special reasons
-    sqrWorldSize = sqrt ( worldSize );
+    //Matrix size is the total # of ints int the matrix
+    size = matrixWidth * matrixWidth;
 
-    //Get our rank in the world
-    MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
+    //Main stays nice and clean this way
+    parallelMultiplication (  );
 
-    //Get my row and column
-    myRow = getRow ( taskid, sqrWorldSize );
-    myCol = getCol ( taskid, sqrWorldSize );
-
-    //This is the width of each processor's left and right matrix
-    procWidth = width / sqrWorldSize;
-
-    int* left = new int[procWidth*procWidth];
-    int* right = new int[procWidth*procWidth]; 
-
-    for ( int i = 0; i < procWidth * procWidth; i++ )
-    {
-        left[i] = 0;
-        right[i] = 0;
-    }
-    
-    //If we are the master
-    if ( taskid == MASTER )
-    {
-        //Seed the random number generator
-        srand ( SEED );
-
-        //The generated left and right matrices
-        //Where's this Temple FT, am I right? Guys?
-        int** templeft;
-        int** tempright;
-
-        //Is it the temple of feet? The temple featuring a new int?
-        templeft = new int*[width];
-        tempright = new int*[width];
-
-        for ( int i = 0; i < width; i++ )
-        {
-            templeft[i] = new int[width];
-            tempright[i] = new int[width];
-        }
-
-        //Fill templeft and tempright with ints
-        for ( int row = 0; row < width; row++ )
-        {
-            for ( int col = 0; col < width; col++ )
-            {
-                /*
-                templeft[row][col] = rand (  ) % MAX;
-                tempright[row][col] = rand (  ) % MAX;*/
-                templeft[row][col] = row * width + col;
-                tempright[row][col] = row * width + col;
-            }
-        }
-
-        cout << "A matrix" << endl;
-        for ( int i = 0; i < width; i++ )
-        {
-            for ( int j = 0; j < width; j++ )
-            {
-                cout << templeft[i][j] << " ";
-            }
-            cout << endl;
-        }
-
-        
-        cout << "B matrix" << endl;
-        for ( int i = 0; i < width; i++ )
-        {
-            for ( int j = 0; j < width; j++ )
-            {
-                cout << tempright[i][j] << " ";
-            }
-            cout << endl;
-        }
-
-
-        //Get the master's left and right matrices
-        for ( int i = 0; i < procWidth; i++ )
-        {
-            for ( int j = 0; j < procWidth; j++ )
-            {
-                left[get2d(i,j,procWidth)] = templeft[i][j];
-                right[get2d(i,j,procWidth)] = tempright[i][j];
-            }
-        }
-
-        //Send the slaves their submatrices
-        sendToSlaves ( sqrWorldSize, templeft, tempright, procWidth );
-
-        //Free up the space for templeft and tempright, as they are now useless
-        //I will forever remember you Temple FT
-        /*
-        for ( int i = 0; i < width; i++ )
-        {
-            delete [] templeft[i];
-            delete [] tempright[i];
-        }
-        delete [] templeft;
-        delete [] tempright;
-
-        cout << "Cleared left and right" << endl;
-*/
-        MPI_Barrier ( MPI_COMM_WORLD );
-
-
-        //Start the timer
-        start = MPI_Wtime (  );
-    }
-    //If we are a slave
-    else
-    {
-        //Receive the left and the right from master
-        MPI_Recv ( left, procWidth * procWidth, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-        MPI_Recv ( right, procWidth * procWidth, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-
-        MPI_Barrier ( MPI_COMM_WORLD );
-    }    
-
-    //Calculate the space to the left and up from us
-    myLeft = myCol - 1;
-    myUp = myRow - 1;
-
-    //Neither row nor column can be 0, so wrap back around
-    if ( myLeft < 0 )
-        myLeft = sqrWorldSize - 1;
-    if ( myUp < 0 )
-        myUp = sqrWorldSize - 1;
-
-    //Preprocess the left matrix
-    if ( myRow != 0 )
-    {   
-        //I know there is fancy modulo math to make this prettier. I'm just not sure what
-        int destCol = myCol - myRow;
-
-        if ( destCol < 0 )
-            destCol += sqrWorldSize;
-
-        cout << myRow << "," << myCol << " sending left " << myRow << " times to " << myRow << "," << destCol << endl;
-
-        //Shift the left matrix to its destination, which is the process' row number to the left
-        //  with wraping
-        shift ( myRow, destCol, left, sqrWorldSize, procWidth, myRow, myCol );
-    }
-
-    cout << myRow << "," << myCol << " left after pre: " << left[0] << endl;
-
-    //Preprocess the right matrix
-    if ( myCol != 0 )
-    {
-        //See excuse above 
-        int destRow = myRow - myCol;
-
-        if ( destRow < 0 )
-            destRow += sqrWorldSize;
-
-        cout << myRow << "," << myCol << " sending up " << myCol << " times to " << destRow << "," << myCol << endl;
-        //Shift the right matrix to its destination, which is the process' column number up
-        //  with wraping
-        shift ( destRow, myCol, right, sqrWorldSize, procWidth, myRow, myCol );
-    }
-
-    cout << myRow << "," << myCol << " right after pre: " << right[0] << endl;
-
-    for ( int i = 0; i <  sqrWorldSize; i++ )
-    {
-        //Multiply the matrices and put them in result
-        multiply ( left, right, result, myRow * procWidth, myCol * procWidth, procWidth );
-
-        MPI_Barrier ( MPI_COMM_WORLD );
-
-        //Shift A to the left
-        shift ( myRow, myLeft, left, sqrWorldSize, procWidth, myRow, myCol );
-
-        //Shift B to the right
-        shift ( myUp, myCol, right, sqrWorldSize, procWidth, myRow, myCol );
-    }
-
-    MPI_Barrier ( MPI_COMM_WORLD );
-/*
-    for ( int current = 0; current < worldSize; current++ )
-    {
-        if ( taskid == current )
-        {
-            cout << "Result matrix " << current << endl << endl;
-
-            for ( int i = 0; i < width; i++ )
-            {
-                for ( int j = 0; j < width; j++ )
-                {
-                    cout << result[i][j] << " " << flush;
-                }
-                cout << endl;
-            }
-            cout << endl;
-        }
-
-        MPI_Barrier ( MPI_COMM_WORLD );
-    }
-*/
-    if ( taskid == MASTER )
-    {
-        //End the timer
-        end = MPI_Wtime (  );
-
-        //Calculate the total time
-        total = end - start;
-
-        //Output the time for totalNums
-//        cout << width << " " << total << endl;
-    }
-    
-    //Finalize MPI
-    MPI_Finalize();
-
+    //Finalize MPI because we're good programmers
+    MPI_Finalize (  );
     return 0;
+}
+
+ /**parallelMultiplication
+ *@fn void parallelMultiplication (  ) 
+ *@brief Does the entire parallelMultiplication
+ *@param N/A
+ *@return void
+ *@pre Everything is initialized correctly
+ *@post The matrices are multiplied
+ */
+void parallelMultiplication (  ) 
+{
+
+    //The number of nodes per row/col
+    procWidth = sqrt(worldSize);
+
+    //Check to see that everything is as it should be
+    if ( procWidth > matrixWidth || ( matrixWidth % procWidth ) != 0 || ( procWidth * procWidth ) != worldSize ) 
+    {
+        printf << "Invalid configuration";
+        return;
+    }
+
+    //Width of the submatrix
+    subWidth = matrixWidth / procWidth;
+
+    //The matrices are square, so this is the total size
+    subSize = subWidth * subWidth;
+
+    //This nodes subMatrices
+    int* leftSub = new int[subSize] (  );
+    int* rightSub = new int[subSize] (  );
+    int* resultSub = new int[subSize] (  );
+
+    //If we are the master
+    if ( taskid == MASTER ) 
+    {
+        //Generate the left and right matrices
+        generateMatrix ( left );
+        generateMatrix ( right );
+
+        //Distribute Matrix A and B to all slaves
+        int* tempLeft = new int[subSize];
+        int* tempRight = new int[subSize];
+
+        //Loop through the rows
+        for(int i = 0; i < procWidth; i++) 
+        {
+            //Loop through the columns
+            for(int j = 0; j < procWidth; j++) 
+            {
+                //If we are the master
+                if ( i == 0 && j == 0 ) 
+                {
+                    //Get our stuff
+                    toSlave ( 0, 0, left, leftSub );
+                    toSlave ( 0, 0, right, rightSub );
+
+                    //Super fancy continue statement
+                    continue;
+                }
+
+                //Split the matrices and send them
+                toSlave ( i, j, left, tempLeft );
+                toSlave ( i, j, right, tempRight );
+
+                //Send to the receiving nodes
+                MPI_Send ( tempLeft, subSize, MPI_INT, ( i * procWidth + j ), LEFT, MPI_COMM_WORLD );
+                MPI_Send ( tempRight, subSize, MPI_INT, ( i * procWidth + j ), RIGHT, MPI_COMM_WORLD );
+            }
+        }
+
+        //Wait for all nodes to receive their submatrices
+        MPI_Barrier ( MPI_COMM_WORLD );
+
+        //Deleting dynamic arrays because I'm a genius coder
+        delete tempLeft;
+        delete tempRight;
+    }
+
+    //If we are a slave
+    else 
+    {
+        //Receive left and right
+        MPI_Recv ( leftSub, subSize, MPI_INT, 0, LEFT, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+        MPI_Recv ( rightSub, subSize, MPI_INT, 0, RIGHT, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+
+        //Girl gimme that barrier
+        MPI_Barrier ( MPI_COMM_WORLD );
+    }
+
+    //Hit 'em with the wall
+    MPI_Barrier ( MPI_COMM_WORLD );
+
+    //Start the timer
+    if ( taskid == MASTER ) 
+        start = MPI_Wtime (  );
+
+    //Get the row and column
+    int myRow = getRow ( taskid, procWidth );
+    int myCol = getCol ( taskid, procWidth );
+
+    //Perform the preproccessing of the matrices
+    //Hey dude, I don't get it either. In Cannon we trust
+    shiftLeft ( leftSub, myRow, myRow, myCol );
+    shiftUp ( rightSub, myCol, myRow, myCol );
+
+    //Make sure everyone is on the same page
+    MPI_Barrier ( MPI_COMM_WORLD );
+
+    //Begin the multiplication
+    for(int n = 0; n < procWidth; n++) 
+    {
+        //Perform that matrix multiplication
+        for(int i = 0; i < subWidth; i++) 
+        {
+            for(int j = 0; j < subWidth; j++) 
+            {
+                for(int k = 0; k < subWidth; k++) 
+                    resultSub[i*subWidth+j] += leftSub[i * subWidth + k] * rightSub[j + subWidth * k];
+            }
+        }
+
+        //Rotate sub matrcies [A left 1] and [B up 1]
+        shiftLeft ( leftSub, 1, myRow, myCol );
+        shiftUp ( rightSub, 1, myRow, myCol );
+    }
+
+    //We did it friends!
+    if ( taskid == MASTER ) 
+    {
+        end = MPI_Wtime (  );
+        printf ( "%d %d %.6f \n", worldSize, matrixWidth, end - start );
+    }
+
+    //If we output to a file
+    if ( toFile ) 
+    {
+        //If we are the master
+        if ( taskid == MASTER ) 
+        {
+            //The full final matrix
+            result = new int[size] (  );
+
+            //Temporary for sending/receiving
+            int* tempResult = new int[subSize] (  );
+
+            //Add Master's result submatrix to the full result matrix
+            toResult ( 0, 0, resultSub, result );
+
+            //The row and column for the node in question
+            int nodeRow, nodeCol;
+
+            //Send the submatrices to the resulting matrix
+            for ( int i = 1; i < worldSize; i++ ) 
+            {
+                //Receive the result submatrix
+                MPI_Recv ( tempResult, subSize, MPI_INT, i, RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+
+                //Find currents node's row and column
+                nodeRow = getRow ( i, procWidth );
+                nodeCol = getCol ( i, procWidth );
+
+                //Add the result submatrix to the full result matrix
+                toResult ( nodeRow, nodeCol, tempResult, result );
+
+                //Sync with other nodes before next send
+                MPI_Barrier ( MPI_COMM_WORLD );
+            }
+            //Write to the file
+            printFile ( left, right, result );
+        }
+
+        //If we are a slave
+        else 
+        {
+            //Loop through all the slaves
+            for ( int i = 1; i < worldSize; i++ ) 
+            {
+                //Send your result
+                if ( i == taskid ) 
+                    MPI_Send ( resultSub, subSize, MPI_INT, 0, RESULT, MPI_COMM_WORLD ); 
+
+                //Wait for everyone else
+                MPI_Barrier ( MPI_COMM_WORLD );
+            }
+        }
+    }
+}
+
+ /**toResult
+ *@fn void toResult ( int row, int col, int* subMatrix, int* &dest ) 
+ *@brief Sends the submatrix back to the result
+ *@param row The row that we're sending to
+ *@param col The column we're sending to
+ *@param subMatrix The submatrix we're sending
+ *@param dest The destination matrix
+ *@return void
+ *@pre The submatrix holds relevant data and all are intialized
+ *@post dest holds all of subMatrix in its rightful place
+ */
+void toResult ( int row, int col, int* subMatrix, int* &dest ) 
+{
+    //The index in the large destination matrix
+    int destID = row * matrixWidth * subWidth + col * subWidth;
+
+    //For each row in the subMatrix copy it to the full matrix
+    for ( int i = 0; i < subWidth; i++ ) 
+    {
+        //Look at that, being super duper fancy with the memcpy
+        memcpy ( &dest[destID], &subMatrix[i * subWidth], sizeof(int) * subWidth );
+
+        //Increment destID to the next row
+        destID += matrixWidth;
+    }
+}
+
+ /**toSlave
+ *@fn void toSlave ( int row, int col, int* matrix, int* &dest ) 
+ *@brief Gets the submatrix to send to the slave
+ *@param row The row of the slave
+ *@param col The column of the slave
+ *@param matrix The matrix to send
+ *@param dest The destination matrix
+ *@return void
+ *@pre All parameters are intialized
+ *@post dest holds matrix
+ */
+void toSlave ( int row, int col, int* matrix, int* &dest ) 
+{
+    //Indices for the matrices
+    int destID = 0;
+    int index;
+
+    //Copy each row into the matrix
+    for ( int i = 0; i < subWidth; i++ ) 
+    {
+        //Get the 1d index
+        index = row * subWidth * matrixWidth + i * matrixWidth + col * subWidth;
+
+        //Memcpy because its super duper fast
+        memcpy ( &dest[destID], &matrix[index], sizeof(int) * subWidth );
+
+        //Move on to the next one
+        destID += subWidth;
+    }
+}
+
+ /**shiftLeft
+ *@fn void shiftLeft ( int* &matrix, int rotations, int myRow, int myCol ) 
+ *@brief Shifts the matrix left
+ *@param matrix The matrix to send/receive from
+ *@param rotations The number of rotations
+ *@param myRow The row of the sender
+ *@param myCol The column of the sender
+ *@return void
+ *@pre The destination exists
+ *@post The destination holds what we had, and we have the next matrix
+ */
+void shiftLeft ( int* &matrix, int rotations, int myRow, int myCol ) 
+{
+    //The destination
+    //I figured out how to do it all fancy like!
+    int dest = myRow * procWidth + ( myCol + procWidth - rotations ) % procWidth;
+
+    //The source node
+    int source = myRow * procWidth + ( myCol + rotations ) % procWidth;
+
+    //Definitely use this. It's superdy duperdy handy
+    MPI_Sendrecv_replace(matrix, subSize, MPI_INT, dest, LEFT, source, LEFT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+}
+
+ /**shiftUp
+ *@fn void shiftUp(int* &matrix, int rotations, int myRow, int myCol) 
+ *@brief Shifts the matrix up
+ *@param matrix The matrix to send/receive from
+ *@param rotations The number of rotations
+ *@param myRow The row of the sender
+ *@param myCol The column of the sender
+ *@return void
+ *@pre The destination exists
+ *@post The destination holds what we had, and we have the next matrix
+ */
+void shiftUp(int* &matrix, int rotations, int myRow, int myCol) 
+{
+    //The destination
+    int dest = ( ( myRow + procWidth - rotations ) % procWidth) * procWidth + myCol;
+
+    //The source
+    int source = ( ( myRow + rotations ) % procWidth ) * procWidth + myCol;
+
+    //See above superdy duperdy comment
+    MPI_Sendrecv_replace ( matrix, subSize, MPI_INT, dest, RIGHT, source, RIGHT, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+}
+
+ /**generateMatrix
+ *@fn void generateMatrix(int* &matrix) 
+ *@brief Generates the matrix
+ *@param matrix The matrix to generate
+ *@return void
+ *@pre N/A
+ *@post matrix holds data fo multiplication
+ */
+void generateMatrix(int* &matrix) 
+{
+    matrix = new int[size];
+
+    for ( int i = 0; i < size; i++ ) 
+        matrix[i] = rand (  ) % MAX;
+
+}
+
+ /**printMatrix
+ *@fn void printMatrix ( int* matrix, int width ) 
+ *@brief Prints out the given matrix
+ *@param matrix The matrix to print out
+ *@param width The width of said matrix
+ *@return void
+ *@pre matrix is instantiated
+ *@post Nothing in matrix is changed
+ */
+void printMatrix ( int* matrix, int width ) 
+{
+    for ( int i = 0; i < width; i++ ) 
+    {
+        for ( int j = 0; j < width; j++ ) 
+            printf("%d ", matrix[i * width + j]);
+
+        //Gotta pretend we're 2D
+        cout << endl;
+    }
+
+}
+
+ /**printFile
+ *@fn void printFile ( int* left, int* right, int* resultSub ) 
+ *@brief Prints to a file
+ *@param left The left matrix
+ *@param right The right matrix
+ *@param resultSub The result matrix
+ *@return void
+ *@pre left, right, and resultSub are instantiated
+ *@post Nothing in left, right, and resultSub are changed
+ */
+void printFile ( int* left, int* right, int* resultSub ) 
+{
+    //It's fout. It's what it's all about
+    fstream fout;
+
+    //Open the file
+    fout.open ( fileName );
+
+    //Print out the left matrix
+    fout << "Left" << endl;
+
+    for ( int i = 0; i < matrixWidth; i++ ) 
+    {
+        for ( int j = 0; j < matrixWidth; j++ ) 
+            fout << left[i * matrixWidth + j] << " ";
+
+        fout << endl;
+    }
+
+    //Print out the right matrix
+    fout << "Right" << endl;
+
+    for ( int i = 0; i < matrixWidth; i++ ) 
+    {
+        for ( int j = 0; j < matrixWidth; j++ ) 
+            fout << right[i * matrixWidth + j] << " ";
+
+        fout << endl;
+    }
+
+    //Print out the result
+    fout << "Result" << endl;
+
+    for ( int i = 0; i < matrixWidth; i++ ) 
+    {
+        for ( int j = 0; j < matrixWidth; j++ )
+            fout << resultSub[i * matrixWidth + j] << " ";
+
+        fout << endl;
+    }
+
+    //Close the file because we're genius programmers
+    fout.close (  );
 }
 
  /**getRow
@@ -313,142 +497,4 @@ int getRow ( int taskid, int sqrWorldSize )
 int getCol ( int taskid, int sqrWorldSize )
 {
     return taskid % sqrWorldSize;
-}
-
- /**getID
- *@fn int getID ( int row, int col, int sqrWorldSize )
- *@brief Gets the row of the process taskid
- *@param row The row representation of the taskid
- *@param col The column representation of the taskid
- *@param sqrWorldSize The square root of the world size
- *@return The taskid, an int
- *@pre N/A
- *@post taskid and sqrWorldSize are not changed
- */
-int getID ( int row, int col, int sqrWorldSize )
-{
-    return row * sqrWorldSize + col;
-}
-
- /**get2d
- *@fn int get2d ( int row, int col, int width )
- *@brief Gets the 1D representation of 2D coordinates for an array
- *@param row The row
- *@param col The column
- *@param width The width of the array
- *@return The 1D representation of a 2D array coordinate
- *@pre N/A
- *@post row, col, and width are not changed
- */
-int get2d ( int row, int col, int width )
-{
-    return width * row + col;
-}
-
- /**sendToSlaves
- *@fn void sendToSlaves ( int worldSize, int** left, int** right, int width )
- *@brief Sends the appropriate data from the master to the slaves
- *@param worldSize The size of the communicator world
- *@param left The left matrix
- *@param right The right matrix
- *@param width The width of the arrays
- *@return N/A
- *@pre left and right hold the left and right matrices
- *@post Nothing in any of the parameters is changed
- */
-void sendToSlaves ( int worldSize, int** left, int** right, int width )
-{
-    int destRow, destCol;
-
-    int* templeft = new int[width*width];
-    int* tempright = new int[width*width];
-
-    //Loop through all the slaves, starting at taskid 1
-    for ( int currentSlave = 1; currentSlave < worldSize * worldSize; currentSlave++ )
-    {
-        destRow = getRow ( currentSlave, worldSize );
-        destCol = getCol ( currentSlave, worldSize );
-
-        int currRow = 0;
-        int currCol = 0;
-        //Loop through the left and right matrices
-        //All slaves get an equal portion, which starts at their column * width and row * width
-        for ( int i = destRow * width; i < destRow +  width; i++ )
-        {
-            currCol = 0;
-            for ( int j = destCol * width; j < destCol + width; j++ )
-            {
-                templeft[get2d(currRow,currCol,width)] = left[i][j];
-                tempright[get2d(currRow,currCol,width)] = right[i][j];
-                currCol++;
-            }
-            currRow++;
-        }
-
-        //Send the left and then the right
-        MPI_Send ( templeft, width*width, MPI_INT, currentSlave, 0, MPI_COMM_WORLD );
-        MPI_Send ( tempright, width*width, MPI_INT, currentSlave, 0, MPI_COMM_WORLD );
-    }
-}
-
- /**shift
- *@fn int shift ( int destRow, int destCol, vector<int>& source, int sqrWorldSize )
- *@brief Sends the source vector to another process
- *@param destRow The "row" of the destination
- *@param destCol The "column" of the destination
- *@param source The source vector
- *@param sqrWorldSize 
- *@return The tag of the receiving process
- *@pre There is a process with row and column destRow and destCol that will eventually receive and something will eventually send to this process
- *@post The vector source holds the information passed from another process. No other parameters are changed
- */
-int shift ( int destRow, int destCol, int* source, int sqrWorldSize, int width, int myRow, int myCol )
-{
-    MPI_Status status;
-
-    //Calculate the destination
-    int dest = getID ( destRow, destCol, sqrWorldSize );
-    int myID = getID ( myRow, myCol, sqrWorldSize );
-
-//    cout << myID << " Sent " << source[0] << " to " << dest << endl;
-
-    //Send and receive, using source as the only buffer
-    //If you're reading this, use this method to be SUPER DUPER EFFICIENT
-    MPI_Sendrecv_replace ( source, width*width, MPI_INT, dest, 0, MPI_ANY_SOURCE,
-                            MPI_ANY_TAG, MPI_COMM_WORLD, &status );
-
-//    cout << myID << " Received " << source[0] << " from " << dest << endl;
-
-    //Return the tag from the sender, just for debugging purposes
-    return status.MPI_TAG;
-}
-
- /**multiply
- *@fn void multiply ( vector<int> left, vector<int> right, int** result, int row, int col, int width )
- *@brief Multiplies the left and right matrices together and puts them in the result
- *@param left The left matrix
- *@param right The right matrix
- *@param result The resulting matrix
- *@param row The initial row
- *@param col The initial column
- *@param width The width of the submatrix we are calculating
- *@return N/A
- *@pre Both left and right hold relevant data
- *@post result holds the multiplied matrix. No other parameters are changed
- */
-void multiply ( int* left, int* right, int** result, int row, int col, int width )
-{
-    //Loop through the rows
-    for ( int i = 0; i < width; i++ )
-    {
-        //Loop through the columns
-        for ( int j = 0; j < width; j++ )
-        {
-            //Multiply it
-            for ( int k = 0; k < width; k++ )
-            {
-                result[i + row][j + col] += left[get2d ( i, k, width )] * right[get2d ( k, j, width )];
-            } 
-        }
-    }
 }
