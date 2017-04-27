@@ -4,4 +4,4 @@
 #SBATCH --mail-user=tylerleedefoor@gmail.com
 #SBATCH --mail-type=ALL
 
-srun Parallel 3 >> Parallel.txt
+srun Parallel Parallel.out 9 >> Timings.txt

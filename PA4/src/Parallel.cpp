@@ -31,9 +31,9 @@ bool toFile = true;
 int subWidth, subSize, procWidth;
 
 //The left, right, and result matrices
-int* left;
-int* right;
-int* result;
+int* leftMatrix;
+int* rightMatrix;
+int* resultMatrix;
 
 //Timer values
 double start, end;
@@ -100,7 +100,7 @@ void parallelMultiplication (  )
     //Check to see that everything is as it should be
     if ( procWidth > matrixWidth || ( matrixWidth % procWidth ) != 0 || ( procWidth * procWidth ) != worldSize ) 
     {
-        printf << "Invalid configuration";
+        cout << "Invalid configuration";
         return;
     }
 
@@ -119,8 +119,8 @@ void parallelMultiplication (  )
     if ( taskid == MASTER ) 
     {
         //Generate the left and right matrices
-        generateMatrix ( left );
-        generateMatrix ( right );
+        generateMatrix ( leftMatrix );
+        generateMatrix ( rightMatrix );
 
         //Distribute Matrix A and B to all slaves
         int* tempLeft = new int[subSize];
@@ -136,16 +136,16 @@ void parallelMultiplication (  )
                 if ( i == 0 && j == 0 ) 
                 {
                     //Get our stuff
-                    toSlave ( 0, 0, left, leftSub );
-                    toSlave ( 0, 0, right, rightSub );
+                    toSlave ( 0, 0, leftMatrix, leftSub );
+                    toSlave ( 0, 0, rightMatrix, rightSub );
 
                     //Super fancy continue statement
                     continue;
                 }
 
                 //Split the matrices and send them
-                toSlave ( i, j, left, tempLeft );
-                toSlave ( i, j, right, tempRight );
+                toSlave ( i, j, leftMatrix, tempLeft );
+                toSlave ( i, j, rightMatrix, tempRight );
 
                 //Send to the receiving nodes
                 MPI_Send ( tempLeft, subSize, MPI_INT, ( i * procWidth + j ), LEFT, MPI_COMM_WORLD );
@@ -223,13 +223,13 @@ void parallelMultiplication (  )
         if ( taskid == MASTER ) 
         {
             //The full final matrix
-            result = new int[size] (  );
+            resultMatrix = new int[size] (  );
 
             //Temporary for sending/receiving
             int* tempResult = new int[subSize] (  );
 
             //Add Master's result submatrix to the full result matrix
-            toResult ( 0, 0, resultSub, result );
+            toResult ( 0, 0, resultSub, resultMatrix );
 
             //The row and column for the node in question
             int nodeRow, nodeCol;
@@ -245,13 +245,13 @@ void parallelMultiplication (  )
                 nodeCol = getCol ( i, procWidth );
 
                 //Add the result submatrix to the full result matrix
-                toResult ( nodeRow, nodeCol, tempResult, result );
+                toResult ( nodeRow, nodeCol, tempResult, resultMatrix );
 
                 //Sync with other nodes before next send
                 MPI_Barrier ( MPI_COMM_WORLD );
             }
             //Write to the file
-            printFile ( left, right, result );
+            printFile ( leftMatrix, rightMatrix, resultMatrix );
         }
 
         //If we are a slave
