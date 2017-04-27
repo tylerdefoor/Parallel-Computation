@@ -1,9 +1,38 @@
 A matrix
-6 1 2 
-1 5 4 
-7 6 2 
+0 1 2 
+3 4 5 
+6 7 8 
+2,0 sending left 2 times to 2,1
 B matrix
-0 1 8 
-0 3 3 
-4 2 8 
-0,1 shifting up to 2,1
+0 1 2 
+3 4 5 
+6 7 8 
+0,0 left after pre: 0
+0,0 right after pre: 0
+0,2 left after pre: 2
+0,2 sending up 2 times to 1,2
+1,0 sending left 1 times to 1,2
+0,1 left after pre: 1
+0,1 sending up 1 times to 2,1
+1,1 sending left 1 times to 1,0
+1,0 left after pre: 4
+1,0 right after pre: 3
+0,2 right after pre: 8
+0,1 right after pre: 4
+1,1 left after pre: 5
+1,1 sending up 1 times to 0,1
+1,1 right after pre: 7
+2,1 sending left 2 times to 2,2
+2,2 sending left 2 times to 2,0
+2,2 left after pre: 7
+2,2 sending up 2 times to 0,2
+1,2 sending left 1 times to 1,1
+2,0 left after pre: 8
+2,0 right after pre: 6
+2,1 left after pre: 6
+2,1 sending up 1 times to 1,1
+1,2 left after pre: 2
+1,2 sending up 2 times to 2,2
+2,1 right after pre: 1
+1,2 right after pre: 3
+2,2 right after pre: 5
