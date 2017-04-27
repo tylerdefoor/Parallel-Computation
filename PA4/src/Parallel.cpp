@@ -35,6 +35,9 @@ int* leftMatrix;
 int* rightMatrix;
 int* resultMatrix;
 
+char* leftFile;
+char* rightFile;
+
 //Timer values
 double start, end;
 
@@ -67,6 +70,9 @@ int main ( int argc, char* argv[] )
     fileName = argv[1];
 
     matrixWidth = atoi ( argv[2] );
+
+    leftFile = argv[3];
+    rightFile = argv[4];
 
     //Get the taskid and world size
     MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
@@ -385,13 +391,25 @@ void shiftUp(int* &matrix, int rotations, int myRow, int myCol)
  *@pre N/A
  *@post matrix holds data fo multiplication
  */
-void generateMatrix(int* &matrix) 
+void generateMatrix ( int* &matrix ) 
 {
     matrix = new int[size];
 
     for ( int i = 0; i < size; i++ ) 
         matrix[i] = rand (  ) % MAX;
 
+}
+
+void readMatrix ( int* &matrix, char* filename )
+{
+    ifstream fin;
+
+    fin.open ( filename );
+
+    fin.ignore ( 256, '\n' );
+
+    for ( int i = 0; i < size; i++ )
+        fin >> matrix[i];
 }
 
  /**printMatrix
@@ -432,7 +450,7 @@ void printFile ( int* left, int* right, int* resultSub )
     fstream fout;
 
     //Open the file
-    fout.open ( fileName );
+    fout.open ( fileName, fstream::out );
 
     //Print out the left matrix
     fout << "Left" << endl;
