@@ -14,7 +14,7 @@
 #include "mpi.h"
 #include <cmath>
 
-#define MAX     100
+#define MAX     10
 #define SEED    42
 #define MASTER  0
 
@@ -89,10 +89,7 @@ int main ( int argc, char** argv )
 
     int* left = new int[procWidth*procWidth];
     int* right = new int[procWidth*procWidth];  
-
-    /*left.resize ( procWidth * procWidth );
-    right.resize ( procWidth * procWidth );*/
-
+    
     //If we are the master
     if ( taskid == MASTER )
     {
@@ -124,6 +121,28 @@ int main ( int argc, char** argv )
             }
         }
 
+        cout << "A matrix" << endl;
+        for ( int i = 0; i < width; i++ )
+        {
+            for ( int j = 0; j < width; j++ )
+            {
+                cout << templeft[i][j] << " ";
+            }
+            cout << endl;
+        }
+
+        
+        cout << "B matrix" << endl;
+        for ( int i = 0; i < width; i++ )
+        {
+            for ( int j = 0; j < width; j++ )
+            {
+                cout << tempright[i][j] << " ";
+            }
+            cout << endl;
+        }
+
+
         //Get the master's left and right matrices
         for ( int i = 0; i < procWidth; i++ )
         {
@@ -136,8 +155,7 @@ int main ( int argc, char** argv )
 
 
         //Send the slaves their submatrices
-        sendToSlaves ( worldSize, templeft, tempright, procWidth );
-
+        sendToSlaves ( sqrWorldSize, templeft, tempright, procWidth );
 
         //Free up the space for templeft and tempright, as they are now useless
         //I will forever remember you Temple FT
@@ -187,6 +205,10 @@ int main ( int argc, char** argv )
         if ( destCol < 0 )
             destCol += sqrWorldSize;
 
+                cout << myRow << "," << myCol << " shifting left to " << myRow << "," << destCol << endl;
+
+        }
+
         //Shift the left matrix to its destination, which is the process' row number to the left
         //  with wraping
         shift ( myRow, destCol, left, sqrWorldSize, procWidth );
@@ -202,6 +224,8 @@ int main ( int argc, char** argv )
         if ( destRow < 0 )
             destRow += sqrWorldSize;
 
+                cout << myRow << "," << myCol << " shifting up to " << destRow << "," << myCol << endl;
+        }
         //Shift the right matrix to its destination, which is the process' column number up
         //  with wraping
         shift ( destRow, myCol, right, sqrWorldSize, procWidth );
@@ -224,6 +248,25 @@ int main ( int argc, char** argv )
     }
 
     MPI_Barrier ( MPI_COMM_WORLD );
+
+    for ( int current = 0; current < worldSize; current++ )
+    {
+        if ( taskid == current )
+        {
+            cout << "Task id result matrix" << current << endl;
+
+            for ( int i = 0; i < width; i++ )
+            {
+                for ( int j = 0; j < width; j++ )
+                {
+                    cout << result[i][j] << " " << flush;
+                }
+                cout << endl;
+            }
+        }
+
+        MPI_Barrier ( MPI_COMM_WORLD );
+    }
 
     if ( taskid == MASTER )
     {
@@ -318,35 +361,27 @@ void sendToSlaves ( int worldSize, int** left, int** right, int width )
 
     int* templeft = new int[width*width];
     int* tempright = new int[width*width];
-    /*
-    vector<int> templeft ( width * width );
-    vector<int> tempright ( width * width );*/
-
 
     //Loop through all the slaves, starting at taskid 1
-    for ( int currentSlave = 1; currentSlave < worldSize; currentSlave++ )
+    for ( int currentSlave = 1; currentSlave < worldSize * worldSize; currentSlave++ )
     {
         destRow = getRow ( currentSlave, worldSize );
         destCol = getCol ( currentSlave, worldSize );
 
         //Loop through the left and right matrices
         //All slaves get an equal portion, which starts at their column * width and row * width
-        for ( int i = destRow * width; i < destRow * ( 2 * width ); i++ )
+        for ( int i = destRow * width; i < destRow +  width; i++ )
         {
-            for ( int j = destCol * width; j < destCol * ( 2 * width ); j++ )
+            for ( int j = destCol * width; j < destCol + width; j++ )
             {
                 templeft[get2d(i,j,width)] = left[i][j];
                 tempright[get2d(i,j,width)] = right[i][j];
             }
         }
 
-
         //Send the left and then the right
         MPI_Send ( templeft, width*width, MPI_INT, currentSlave, 0, MPI_COMM_WORLD );
-
-
         MPI_Send ( tempright, width*width, MPI_INT, currentSlave, 0, MPI_COMM_WORLD );
-
     }
 }
 
@@ -367,7 +402,6 @@ int shift ( int destRow, int destCol, int* source, int sqrWorldSize, int width )
 
     //Calculate the destination
     int dest = getID ( destRow, destCol, sqrWorldSize );
-
 
     //Send and receive, using source as the only buffer
     //If you're reading this, use this method to be SUPER DUPER EFFICIENT
