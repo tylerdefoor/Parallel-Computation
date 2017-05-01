@@ -19,7 +19,7 @@ To run your own tests, the command line argument rules are as follows:
 2. The first is the output file
 3. The second is the left matrix
 4. The third is the right matrix
-5. The third is the square matrix width
+5. The fourth is the square matrix width
 
 Run instructions
 1. Navigate to build
