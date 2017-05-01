@@ -17,9 +17,9 @@ A parallel implementation of Matrix Multiplication. The matrix size must be a sq
 To run your own tests, the command line argument rules are as follows:
 1. There must be 4 arguments
 2. The first is the output file
-3. The second is the left matrix
-4. The third is the right matrix
-5. The fourth is the square matrix width
+5. The second is the square matrix width
+3. The third is the left matrix
+4. The fourth is the right matrix
 
 Run instructions
 1. Navigate to build
