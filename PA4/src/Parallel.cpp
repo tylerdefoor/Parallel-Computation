@@ -54,6 +54,7 @@ int getCol ( int taskid, int sqrWorldSize );
 void toResult ( int row, int col, int* subMatrix, int* &dest );
 void shiftLeft ( int* &matrix, int rotations, int myRow, int myCol) ;
 void shiftUp ( int* &matrix, int rotations, int myRow, int myCol );
+void readMatrix ( int* &matrix, char* filename );
 
 //The main function - Boom. There's some documentation
 int main ( int argc, char* argv[] ) 
@@ -125,8 +126,8 @@ void parallelMultiplication (  )
     if ( taskid == MASTER ) 
     {
         //Generate the left and right matrices
-        generateMatrix ( leftMatrix );
-        generateMatrix ( rightMatrix );
+        readMatrix ( leftMatrix, leftFile );
+        readMatrix ( rightMatrix, rightFile );
 
         //Distribute Matrix A and B to all slaves
         int* tempLeft = new int[subSize];
@@ -402,14 +403,23 @@ void generateMatrix ( int* &matrix )
 
 void readMatrix ( int* &matrix, char* filename )
 {
-    ifstream fin;
+    fstream fin ( filename, ios_base::in );
 
-    fin.open ( filename );
+    cout << "Reading in " << filename << endl;
 
-    fin.ignore ( 256, '\n' );
+    int width;
 
-    for ( int i = 0; i < size; i++ )
+    fin >> width;
+
+    matrix = new int[width * width];
+
+    for ( int i = 0; i < width * width; i++ )
+    {
+        cout << i << endl;
         fin >> matrix[i];
+    }
+
+     cout << "Done with reading in " << filename << endl;
 }
 
  /**printMatrix
