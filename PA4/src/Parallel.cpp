@@ -25,7 +25,7 @@ using namespace std;
 
 int matrixWidth, size;
 char* fileName;
-bool toFile = true;
+bool toFile = false;
 
 //The width of the submatrices, the total size of the submatrices, and the processor width
 int subWidth, subSize, procWidth;
@@ -71,10 +71,10 @@ int main ( int argc, char* argv[] )
     fileName = argv[1];
 
     matrixWidth = atoi ( argv[2] );
-
+/*
     leftFile = argv[3];
     rightFile = argv[4];
-
+*/
     //Get the taskid and world size
     MPI_Comm_rank ( MPI_COMM_WORLD, &taskid );
     MPI_Comm_size ( MPI_COMM_WORLD, &worldSize );
@@ -126,8 +126,10 @@ void parallelMultiplication (  )
     if ( taskid == MASTER ) 
     {
         //Generate the left and right matrices
-        readMatrix ( leftMatrix, leftFile );
-        readMatrix ( rightMatrix, rightFile );
+        //readMatrix ( leftMatrix, leftFile );
+        //readMatrix ( rightMatrix, rightFile );
+        generateMatrix ( leftMatrix );
+        generateMatrix ( rightMatrix );
 
         //Distribute Matrix A and B to all slaves
         int* tempLeft = new int[subSize];
@@ -220,7 +222,7 @@ void parallelMultiplication (  )
     if ( taskid == MASTER ) 
     {
         end = MPI_Wtime (  );
-        printf ( "%d %d %.6f \n", worldSize, matrixWidth, end - start );
+        cout << worldSize << " " << matrixWidth << " " << (end-start) << endl;
     }
 
     //If we output to a file

@@ -1,17 +1,10 @@
 #!/bin/bash
 
-#SBATCH --time=00:05:00
-#SBATCH -N 2
+#SBATCH --time=00:07:00
 
-totalNums=100000
-while [ $totalNums -le 1000000 ];
+totalNums=540
+while [ $totalNums -le  5400 ];
 do
-    node=2
-    while [ $node -le 16 ];
-    do
-        srun -n $node Dynamic $totalNums >> Dynamic.txt
-        echo "$node"
-        let node=node+2
-    done
-    let totalNums=totalNums+50000
+    srun -n 9 -N 2 Parallel Parallel.out $totalNums >> Timings.txt
+    let totalNums=totalNums+180
 done
